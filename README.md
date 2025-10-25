@@ -7,12 +7,13 @@ At the moment, not much to look at. I'm working on it, I promise. Once I have en
 - g++
 
 ## Install
-Download the repository as a ZIP file. So far, everything required is in one .cpp file.
-
-## Usage
+Download the repository as a ZIP file.
 ```
 g++ main.cpp
 ```
+
+## Usage
+Run the compiled executable and a Terminal window will open. That's it. Enjoy.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first and discuss what you want to change.
