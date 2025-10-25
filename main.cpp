@@ -35,7 +35,7 @@ int main(VOID) {
     while (true)
     {
         system("cls");
-        cout << "Idle IncremenTerminal v0.0b\nInput \"help\" for all possible commands!\n----------------------------------------";
+        cout << "Idle IncremenTerminal v0.01b\nInput \"help\" for all possible commands!\n----------------------------------------";
         /* cout << temp; */
         cout << "\n\n\n\n\n\n\n\n\n\n" << "this is where the actual data goes in" << endl << ">" << input_chars;
 
