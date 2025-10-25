@@ -18,4 +18,4 @@ g++ main.cpp
 Pull requests are welcome. For major changes, please open an issue first and discuss what you want to change.
 
 ## License
-[GNU GPL-3.0](https://choosealicense.com/licenses/gpl-3.0/)
+[MIT License](https://choosealicense.com/licenses/mit/)
