@@ -1,8 +1,13 @@
 #include <iostream>
 #include <Windows.h>
 #include <stdio.h>
+#include <string>
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
+
+string buffer = "";
 
 HANDLE hStdin;
 DWORD fdwSaveOldMode;
@@ -12,10 +17,29 @@ VOID KeyEventProc(KEY_EVENT_RECORD);
 VOID MouseEventProc(MOUSE_EVENT_RECORD);
 VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 
-string input_chars = "";
+string inputChars = "";
 int temp = 0;
 
+int menu = 0;
+
+bool newsTickerRunning = false; // Dictates if the news ticker is even showing anything
+int newsTickerTime = 0; // Time between messages / scrolling speed
+string newsTickerMsg = ""; // The message pulled from the array
+int newsTick = 0; // Letter index in newsTickerMsg
+int i;
+string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
+
+void ClearScreen() {
+    COORD cursorPosition;
+    cursorPosition.X = 0;
+    cursorPosition.Y = 0;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursorPosition);
+}
+
 int main(VOID) {
+    srand(time(0));
+    newsTickerTime = (rand() % 60) + 20;
+
     system("title Idle IncremenTerminal");
 
     DWORD cNumRead, fdwMode, i;
@@ -34,21 +58,51 @@ int main(VOID) {
     
     while (true)
     {
-        system("cls");
-        cout << "Idle IncremenTerminal v0.01b\nInput \"help\" for all possible commands!\n----------------------------------------";
-        /* cout << temp; */
-        cout << "\n\n\n\n\n\n\n\n\n\n" << "this is where the actual data goes in" << endl << ">" << input_chars;
+        buffer = "Idle IncremenTerminal v0.01b\nInput \"help\" for all possible commands!\n----------------------------------------\n";
+        
+        if (!newsTickerRunning) {
+            newsTickerRunning = bool(--newsTickerTime == 0);
+            if (newsTickerRunning) {
+                newsTickerTime = 3;
+                srand(clock());
+                newsTickerMsg = newsTickerMsgArr[rand()%(newsTickerMsgArr->length())];
+            }
+        } else {
+            if (--newsTickerTime == 0) {
+                newsTickerTime = 3;
+                for (i = -40; i < 0; i++) {
+                    if (newsTick + i < 0 || newsTick + i >= newsTickerMsg.length()) {
+                        buffer += "";
+                    } else {
+                        buffer += newsTickerMsg[newsTick + i];
+                    }
+                }
+                if (++newsTick >= newsTickerMsg.length()+40) {
+                    newsTick = 0;
+                    newsTickerRunning = false;
+                    srand(clock());
+                    newsTickerTime = (rand() % 60) + 20;
+                }
+            }   
+        }
 
-        /* temp++;
-        if (temp >= 30) temp = 0; */
+        buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
+        cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
 
-        if (!ReadConsoleInput(
+        switch (menu) {
+            case 0: // main menu
+                buffer += "\n\n\n\n\n\n\n\n\n\n" + (string)"this is where the actual data goes";
+                break;
+        }
+        buffer += "\n>" + inputChars;
+
+        /* if (!ReadConsoleInput(
             hStdin,
             irInBuf,
-            128,
+            1,
             &cNumRead
         ))
-        ErrorExit("ReadConsoleInput");
+        ErrorExit("ReadConsoleInput"); */
 
         for (i = 0; i < cNumRead; i++) {
             switch (irInBuf[i].EventType) {
@@ -56,10 +110,10 @@ int main(VOID) {
                     KeyEventProc(irInBuf[i].Event.KeyEvent);
                     break;
                 case MOUSE_EVENT:
-                    MouseEventProc(irInBuf[i].Event.MouseEvent);
+                    // MouseEventProc(irInBuf[i].Event.MouseEvent);
                     break;
                 case WINDOW_BUFFER_SIZE_EVENT:
-                    ResizeEventProc(irInBuf[i].Event.WindowBufferSizeEvent);
+                    // ResizeEventProc(irInBuf[i].Event.WindowBufferSizeEvent);
                     break;
                 case FOCUS_EVENT:
                 case MENU_EVENT:
@@ -70,7 +124,10 @@ int main(VOID) {
             }
         }
 
-        Sleep(33);
+        ClearScreen();
+        cout << buffer;
+        Sleep(100);
+        buffer = "";
     }
 
     SetConsoleMode(hStdin, fdwSaveOldMode);
@@ -92,10 +149,10 @@ VOID KeyEventProc(KEY_EVENT_RECORD ker) {
     if (ker.bKeyDown) {
         if (ker.uChar.AsciiChar == 13) {
             /* printf("enter"); */
-            input_chars = "";
+            inputChars = "";
         }
-        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && input_chars.length() < 128) {
-            input_chars.push_back(ker.uChar.AsciiChar);
+        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 128) {
+            inputChars.push_back(ker.uChar.AsciiChar);
         }
     }
 }
