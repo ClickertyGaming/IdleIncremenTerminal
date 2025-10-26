@@ -96,13 +96,12 @@ int main(VOID) {
         }
         buffer += "\n>" + inputChars;
 
-        /* if (!ReadConsoleInput(
+        bool consoleInput = ReadConsoleInput(
             hStdin,
             irInBuf,
-            1,
+            10,
             &cNumRead
-        ))
-        ErrorExit("ReadConsoleInput"); */
+        );
 
         for (i = 0; i < cNumRead; i++) {
             switch (irInBuf[i].EventType) {
@@ -151,7 +150,7 @@ VOID KeyEventProc(KEY_EVENT_RECORD ker) {
             /* printf("enter"); */
             inputChars = "";
         }
-        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 128) {
+        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 10) {
             inputChars.push_back(ker.uChar.AsciiChar);
         }
     }
