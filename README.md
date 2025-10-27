@@ -1,3 +1,5 @@
+## ⚠️ WARNING: Project is in a very early alpha stage, expect nothing
+
 # IdleIncremenTerminal
 A fully fledged idle incremental game made in C++ running entirely within Windows Terminal.
 
