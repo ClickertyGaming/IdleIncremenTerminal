@@ -10,6 +10,7 @@ using namespace std;
 string buffer = "";
 
 HANDLE hStdin;
+HANDLE hStdout;
 DWORD fdwSaveOldMode;
 
 VOID ErrorExit(LPCSTR);
@@ -29,11 +30,31 @@ int newsTick = 0; // Letter index in newsTickerMsg
 int i;
 string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
 
-void ClearScreen() {
-    COORD cursorPosition;
-    cursorPosition.X = 0;
-    cursorPosition.Y = 0;
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursorPosition);
+void ClearScreen(HANDLE hConsole) {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    SMALL_RECT scrollRect;
+    COORD scrollTarget;
+    CHAR_INFO fill;
+
+    if (!GetConsoleScreenBufferInfo(hConsole, &csbi)) return;
+
+    /* scrollRect.Left = 0;
+    scrollRect.Top = 0;
+    scrollRect.Right = csbi.dwSize.X;
+    scrollRect.Bottom = csbi.dwSize.Y;
+
+    scrollTarget.X = 0;
+    scrollTarget.Y = (SHORT)(0 - csbi.dwSize.Y);
+
+    fill.Char.UnicodeChar = TEXT(' ');
+    fill.Attributes = csbi.wAttributes;
+
+    ScrollConsoleScreenBuffer(hConsole, &scrollRect, NULL, scrollTarget, &fill); */
+
+    csbi.dwCursorPosition.X = 0;
+    csbi.dwCursorPosition.Y = 0;
+
+    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
 }
 
 int main(VOID) {
@@ -48,17 +69,21 @@ int main(VOID) {
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     if (hStdin == INVALID_HANDLE_VALUE)
         ErrorExit("GetStdHandle");
+
+    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hStdout == INVALID_HANDLE_VALUE)
+        ErrorExit("GetStdHandle");
     
     if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
         ErrorExit("GetConsoleMode");
     
-    fdwMode = (ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE;
+    fdwMode = (ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE & ~ENABLE_ECHO_INPUT;
     if (!SetConsoleMode(hStdin, fdwMode))
         ErrorExit("SetConsoleMode");
     
     while (true)
     {
-        buffer = "Idle IncremenTerminal v0.01b\nInput \"help\" for all possible commands!\n----------------------------------------\n";
+        buffer = "Idle IncremenTerminal v0.00a\nInput \"help\" for all possible commands!\n----------------------------------------\n";
         
         if (!newsTickerRunning) {
             newsTickerRunning = bool(--newsTickerTime == 0);
@@ -86,8 +111,8 @@ int main(VOID) {
             }   
         }
 
-        buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
-        cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
+        /* buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
+        cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl; */
 
         switch (menu) {
             case 0: // main menu
@@ -99,7 +124,7 @@ int main(VOID) {
         bool consoleInput = ReadConsoleInput(
             hStdin,
             irInBuf,
-            10,
+            128,
             &cNumRead
         );
 
@@ -109,21 +134,19 @@ int main(VOID) {
                     KeyEventProc(irInBuf[i].Event.KeyEvent);
                     break;
                 case MOUSE_EVENT:
-                    // MouseEventProc(irInBuf[i].Event.MouseEvent);
                     break;
                 case WINDOW_BUFFER_SIZE_EVENT:
-                    // ResizeEventProc(irInBuf[i].Event.WindowBufferSizeEvent);
                     break;
                 case FOCUS_EVENT:
                 case MENU_EVENT:
                     break;
                 default:
-                    ErrorExit("Unknown event type");
+                    /* ErrorExit("Unknown event type"); */
                     break;
             }
         }
 
-        ClearScreen();
+        ClearScreen(hStdout);
         cout << buffer;
         Sleep(100);
         buffer = "";
@@ -150,7 +173,7 @@ VOID KeyEventProc(KEY_EVENT_RECORD ker) {
             /* printf("enter"); */
             inputChars = "";
         }
-        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 10) {
+        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 128) {
             inputChars.push_back(ker.uChar.AsciiChar);
         }
     }
