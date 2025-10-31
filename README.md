@@ -6,6 +6,7 @@ A fully fledged idle incremental game made in C++ running entirely within Window
 At the moment, not much to look at. I'm working on it, I promise. Once I have enough, this repository will look prettier.
 
 ## Prerequisites
+- MinGW
 - g++
 
 ## Install
