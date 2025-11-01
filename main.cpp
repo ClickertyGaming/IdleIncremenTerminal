@@ -84,6 +84,10 @@ void UpdateScreen(HANDLE hConsole, int delay) {
     Sleep(delay);
 }
 
+void UpdateNewsTicker() {
+    
+}
+
 int main(VOID) {
     srand(time(0));
     newsTickerTime = (rand() % 60) + 20;
@@ -112,7 +116,9 @@ int main(VOID) {
     {
         buffer = "Idle IncremenTerminal v0.00a\nInput \"help\" for all possible commands!\n----------------------------------------\n";
         
-        if (!newsTickerRunning) {
+        UpdateNewsTicker();
+
+        /* if (!newsTickerRunning) {
             newsTickerRunning = bool(--newsTickerTime == 0);
             if (newsTickerRunning) {
                 newsTickerTime = 3;
@@ -136,10 +142,10 @@ int main(VOID) {
                     newsTickerTime = (rand() % 60) + 20;
                 }
             }   
-        }
+        } */
 
         // buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
-        cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
+        // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
 
         switch (menu) {
             case MENU_MAIN: // main menu
@@ -167,6 +173,7 @@ int main(VOID) {
                 buffer += "\n";
                 break;
         }
+
         buffer += "\n>";
 
         bool consoleInput = ReadConsoleInput(
