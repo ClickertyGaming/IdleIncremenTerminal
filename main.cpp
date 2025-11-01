@@ -18,8 +18,6 @@ VOID KeyEventProc(KEY_EVENT_RECORD);
 VOID MouseEventProc(MOUSE_EVENT_RECORD);
 VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 
-KEY_EVENT_RECORD emptyKeyEventRecord;
-
 string inputChars = "";
 int temp = 0;
 
@@ -39,10 +37,9 @@ int i;
 string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
 
 /* TODO:
-The program crashes sometimes because of news ticker fuckery, fix that
+Fix the news ticker function
 */
 
-// TODO: divide into sections for overwriting
 void UpdateScreen(HANDLE hConsole, int delay) {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     SMALL_RECT scrollRect;
@@ -83,6 +80,8 @@ void UpdateScreen(HANDLE hConsole, int delay) {
     cout << inputChars;
 
     buffer = "";
+
+    Sleep(delay);
 }
 
 int main(VOID) {
@@ -108,9 +107,6 @@ int main(VOID) {
     fdwMode = (ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE & ~ENABLE_ECHO_INPUT;
     if (!SetConsoleMode(hStdin, fdwMode))
         ErrorExit("SetConsoleMode");
-    
-    emptyKeyEventRecord.bKeyDown = true;
-    emptyKeyEventRecord.uChar.AsciiChar = 32;
 
     while (true)
     {
@@ -142,8 +138,8 @@ int main(VOID) {
             }   
         }
 
-        /* buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
-        // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl; */
+        // buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
+        cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
 
         switch (menu) {
             case MENU_MAIN: // main menu
@@ -194,12 +190,14 @@ int main(VOID) {
                     break;
                 default:
                     /* ErrorExit("Unknown event type"); */
-                    KeyEventProc(emptyKeyEventRecord);
                     break;
             }
         }
 
         UpdateScreen(hStdout, 100);
+        /* cout << buffer;
+        Sleep(100);
+        buffer = ""; */
     }
 
     SetConsoleMode(hStdin, fdwSaveOldMode);
