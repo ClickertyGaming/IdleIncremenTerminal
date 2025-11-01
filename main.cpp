@@ -39,7 +39,6 @@ int i;
 string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
 
 /* TODO:
-Fix inputChars not clearing on Enter
 The program crashes sometimes because of news ticker fuckery, fix that
 */
 
@@ -148,10 +147,28 @@ int main(VOID) {
 
         switch (menu) {
             case MENU_MAIN: // main menu
-                buffer += "\n\n\n\n\n\n\n\n\n\n" + (string)"this is where the actual data goes";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n" + (string)"this is where the actual data goes";
                 break;
             default:
-                buffer += "\n\n\n\n\n\n\n\n\n\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
+                buffer += "\n";
                 break;
         }
         buffer += "\n>";
