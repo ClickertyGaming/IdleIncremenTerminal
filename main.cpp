@@ -24,11 +24,12 @@ string inputChars = "";
 int temp = 0;
 
 enum MenuState {
-    MAIN,
-    SETTINGS,
-
+    MENU_MAIN,
+    MENU_SETTINGS,
+    MENU_CREDITS,
+    MENU_HELP
 };
-int menu = 0;
+enum MenuState menu = MENU_MAIN;
 
 bool newsTickerRunning = false; // Dictates if the news ticker is even showing anything
 int newsTickerTime = 0; // Time between messages / scrolling speed
@@ -146,11 +147,14 @@ int main(VOID) {
         // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl; */
 
         switch (menu) {
-            case 0: // main menu
+            case MENU_MAIN: // main menu
                 buffer += "\n\n\n\n\n\n\n\n\n\n" + (string)"this is where the actual data goes";
                 break;
+            default:
+                buffer += "\n\n\n\n\n\n\n\n\n\n";
+                break;
         }
-        buffer += "\n>" + inputChars;
+        buffer += "\n>";
 
         bool consoleInput = ReadConsoleInput(
             hStdin,
@@ -179,9 +183,6 @@ int main(VOID) {
         }
 
         UpdateScreen(hStdout, 100);
-        cout << buffer;
-        // Sleep(100);
-        buffer = "";
     }
 
     SetConsoleMode(hStdin, fdwSaveOldMode);
