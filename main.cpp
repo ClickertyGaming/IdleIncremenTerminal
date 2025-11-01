@@ -18,9 +18,16 @@ VOID KeyEventProc(KEY_EVENT_RECORD);
 VOID MouseEventProc(MOUSE_EVENT_RECORD);
 VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 
+KEY_EVENT_RECORD emptyKeyEventRecord;
+
 string inputChars = "";
 int temp = 0;
 
+enum MenuState {
+    MAIN,
+    SETTINGS,
+
+};
 int menu = 0;
 
 bool newsTickerRunning = false; // Dictates if the news ticker is even showing anything
@@ -30,7 +37,13 @@ int newsTick = 0; // Letter index in newsTickerMsg
 int i;
 string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
 
-void ClearScreen(HANDLE hConsole) {
+/* TODO:
+Fix inputChars not clearing on Enter
+The program crashes sometimes because of news ticker fuckery, fix that
+*/
+
+// TODO: divide into sections for overwriting
+void UpdateScreen(HANDLE hConsole, int delay) {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     SMALL_RECT scrollRect;
     COORD scrollTarget;
@@ -55,6 +68,21 @@ void ClearScreen(HANDLE hConsole) {
     csbi.dwCursorPosition.Y = 0;
 
     SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+
+    cout << buffer;
+    
+    csbi.dwCursorPosition.X = 1;
+    csbi.dwCursorPosition.Y = 14;
+
+    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+
+    cout << "                                                                                                                               ";
+
+    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+
+    cout << inputChars;
+
+    buffer = "";
 }
 
 int main(VOID) {
@@ -81,6 +109,9 @@ int main(VOID) {
     if (!SetConsoleMode(hStdin, fdwMode))
         ErrorExit("SetConsoleMode");
     
+    emptyKeyEventRecord.bKeyDown = true;
+    emptyKeyEventRecord.uChar.AsciiChar = 32;
+
     while (true)
     {
         buffer = "Idle IncremenTerminal v0.00a\nInput \"help\" for all possible commands!\n----------------------------------------\n";
@@ -112,7 +143,7 @@ int main(VOID) {
         }
 
         /* buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
-        cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl; */
+        // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl; */
 
         switch (menu) {
             case 0: // main menu
@@ -142,13 +173,14 @@ int main(VOID) {
                     break;
                 default:
                     /* ErrorExit("Unknown event type"); */
+                    KeyEventProc(emptyKeyEventRecord);
                     break;
             }
         }
 
-        ClearScreen(hStdout);
+        UpdateScreen(hStdout, 100);
         cout << buffer;
-        Sleep(100);
+        // Sleep(100);
         buffer = "";
     }
 
@@ -172,6 +204,9 @@ VOID KeyEventProc(KEY_EVENT_RECORD ker) {
         if (ker.uChar.AsciiChar == 13) {
             /* printf("enter"); */
             inputChars = "";
+        }
+        else if (ker.uChar.AsciiChar == 8 && inputChars.length() > 0) {
+            inputChars.pop_back();
         }
         else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 128) {
             inputChars.push_back(ker.uChar.AsciiChar);
