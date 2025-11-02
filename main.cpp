@@ -7,6 +7,28 @@
 #include <ctime>
 using namespace std;
 
+#ifndef CONSOLE_READ_NOREMOVE
+#define CONSOLE_READ_NOREMOVE   0x0001
+#endif
+
+#ifndef CONSOLE_READ_NOWAIT
+#define CONSOLE_READ_NOWAIT     0x0002
+#endif
+
+/* BOOL WINAPI ReadConsoleInputExA(
+    _In_ HANDLE hConsoleInput,
+    _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
+    _In_ DWORD nLength,
+    _Out_ LPDWORD lpNumberOfEventsRead,
+    _In_ USHORT wFlags);
+
+BOOL WINAPI ReadConsoleInputExW(
+    _In_ HANDLE hConsoleInput,
+    _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
+    _In_ DWORD nLength,
+    _Out_ LPDWORD lpNumberOfEventsRead,
+    _In_ USHORT wFlags); */
+
 string buffer = "";
 
 HANDLE hStdin;
@@ -17,6 +39,8 @@ VOID ErrorExit(LPCSTR);
 VOID KeyEventProc(KEY_EVENT_RECORD);
 VOID MouseEventProc(MOUSE_EVENT_RECORD);
 VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
+void UpdateScreen(HANDLE, int);
+void UpdateNewsTicker();
 
 string inputChars = "";
 int temp = 0;
@@ -40,81 +64,6 @@ string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjo
 Fix the news ticker function
 */
 
-void UpdateScreen(HANDLE hConsole, int delay) {
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    SMALL_RECT scrollRect;
-    COORD scrollTarget;
-    CHAR_INFO fill;
-
-    if (!GetConsoleScreenBufferInfo(hConsole, &csbi)) return;
-
-    /* scrollRect.Left = 0;
-    scrollRect.Top = 0;
-    scrollRect.Right = csbi.dwSize.X;
-    scrollRect.Bottom = csbi.dwSize.Y;
-
-    scrollTarget.X = 0;
-    scrollTarget.Y = (SHORT)(0 - csbi.dwSize.Y);
-
-    fill.Char.UnicodeChar = TEXT(' ');
-    fill.Attributes = csbi.wAttributes;
-
-    ScrollConsoleScreenBuffer(hConsole, &scrollRect, NULL, scrollTarget, &fill); */
-
-    csbi.dwCursorPosition.X = 0;
-    csbi.dwCursorPosition.Y = 0;
-
-    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
-
-    cout << buffer;
-    
-    csbi.dwCursorPosition.X = 1;
-    csbi.dwCursorPosition.Y = 14;
-
-    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
-
-    cout << "                                                                                                                               ";
-
-    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
-
-    cout << inputChars;
-
-    buffer = "";
-
-    Sleep(delay);
-}
-
-void UpdateNewsTicker() {
-    if (!newsTickerRunning) {
-        if (--newsTickerTime == 0) {
-            newsTickerTime = newsSpeed;
-            newsTickerRunning = true;
-            srand(clock());
-            newsTickerMsg = newsTickerMsgArr[rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0]))];
-            // buffer += to_string(rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0])));
-        }
-    }
-    else {
-        if (--newsTickerTime == 0) {
-            newsTickerTime = newsSpeed;
-            for (int i = -40; i < 0; i++) {
-                if (newsTick + i >= 0 && newsTick + i < newsTickerMsg.length()) {
-                    buffer += newsTickerMsg[newsTick + i];
-                } else {
-                    buffer += " ";
-                }
-            }
-            if (++newsTick > newsTickerMsg.length()+40) {
-                buffer += "\r ";
-                newsTick = 0;
-                newsTickerRunning = false;
-                srand(clock());
-                newsTickerTime = (rand()%60)+20;
-            }
-        }
-    }
-}
-
 int main(VOID) {
     srand(time(0));
     newsTickerTime = (rand() % 60) + 20;
@@ -122,7 +71,8 @@ int main(VOID) {
     system("title Idle IncremenTerminal");
 
     DWORD cNumRead, fdwMode, i;
-    INPUT_RECORD irInBuf[128];
+    LPDWORD cNumUnread;
+    INPUT_RECORD irInBuf[128], kirInBuf[128];
 
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     if (hStdin == INVALID_HANDLE_VALUE)
@@ -203,12 +153,24 @@ int main(VOID) {
 
         buffer += "\n>";
 
-        bool consoleInput = ReadConsoleInput(
+        printf("\nbefore");
+
+        /* bool consoleInput = ReadConsoleInputEx(
             hStdin,
             irInBuf,
             128,
             &cNumRead
-        );
+        ); */
+
+        /* bool consoleInput = ReadConsoleInputExW(
+            hStdin,
+            irInBuf,
+            128,
+            &cNumRead,
+            (CONSOLE_READ_NOWAIT)
+        ); */
+
+        printf("\nafter");
 
         for (i = 0; i < cNumRead; i++) {
             switch (irInBuf[i].EventType) {
@@ -223,7 +185,7 @@ int main(VOID) {
                 case MENU_EVENT:
                     break;
                 default:
-                    /* ErrorExit("Unknown event type"); */
+                    // ErrorExit("Unknown event type");
                     break;
             }
         }
@@ -237,6 +199,81 @@ int main(VOID) {
     SetConsoleMode(hStdin, fdwSaveOldMode);
 
     return 0;
+}
+
+void UpdateScreen(HANDLE hConsole, int delay) {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    SMALL_RECT scrollRect;
+    COORD scrollTarget;
+    CHAR_INFO fill;
+
+    if (!GetConsoleScreenBufferInfo(hConsole, &csbi)) return;
+
+    /* scrollRect.Left = 0;
+    scrollRect.Top = 0;
+    scrollRect.Right = csbi.dwSize.X;
+    scrollRect.Bottom = csbi.dwSize.Y;
+
+    scrollTarget.X = 0;
+    scrollTarget.Y = (SHORT)(0 - csbi.dwSize.Y);
+
+    fill.Char.UnicodeChar = TEXT(' ');
+    fill.Attributes = csbi.wAttributes;
+
+    ScrollConsoleScreenBuffer(hConsole, &scrollRect, NULL, scrollTarget, &fill); */
+
+    csbi.dwCursorPosition.X = 0;
+    csbi.dwCursorPosition.Y = 0;
+
+    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+
+    cout << buffer;
+    
+    csbi.dwCursorPosition.X = 1;
+    csbi.dwCursorPosition.Y = 14;
+
+    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+
+    cout << "                                                                                                                               ";
+
+    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+
+    cout << inputChars;
+
+    buffer = "";
+
+    Sleep(delay);
+}
+
+void UpdateNewsTicker() {
+    if (!newsTickerRunning) {
+        if (--newsTickerTime == 0) {
+            newsTickerTime = newsSpeed;
+            newsTickerRunning = true;
+            srand(clock());
+            newsTickerMsg = newsTickerMsgArr[rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0]))];
+            // buffer += to_string(rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0])));
+        }
+    }
+    else {
+        if (--newsTickerTime == 0) {
+            newsTickerTime = newsSpeed;
+            for (int i = -40; i < 0; i++) {
+                if (newsTick + i >= 0 && newsTick + i < newsTickerMsg.length()) {
+                    buffer += newsTickerMsg[newsTick + i];
+                } else {
+                    buffer += " ";
+                }
+            }
+            if (++newsTick > newsTickerMsg.length()+40) {
+                buffer += "\r ";
+                newsTick = 0;
+                newsTickerRunning = false;
+                srand(clock());
+                newsTickerTime = (rand()%60)+20;
+            }
+        }
+    }
 }
 
 VOID ErrorExit(LPCSTR lpszMessage) {
