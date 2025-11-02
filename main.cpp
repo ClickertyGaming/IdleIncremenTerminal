@@ -33,7 +33,7 @@ bool newsTickerRunning = false; // Dictates if the news ticker is even showing a
 int newsTickerTime = 0; // Time between messages / scrolling speed
 string newsTickerMsg = ""; // The message pulled from the array
 int newsTick = 0; // Letter index in newsTickerMsg
-int i;
+int newsSpeed = 2; // Scroll speed of newsTickerMsg
 string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
 
 /* TODO:
@@ -85,7 +85,34 @@ void UpdateScreen(HANDLE hConsole, int delay) {
 }
 
 void UpdateNewsTicker() {
-    
+    if (!newsTickerRunning) {
+        if (--newsTickerTime == 0) {
+            newsTickerTime = newsSpeed;
+            newsTickerRunning = true;
+            srand(clock());
+            newsTickerMsg = newsTickerMsgArr[rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0]))];
+            // buffer += to_string(rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0])));
+        }
+    }
+    else {
+        if (--newsTickerTime == 0) {
+            newsTickerTime = newsSpeed;
+            for (int i = -40; i < 0; i++) {
+                if (newsTick + i >= 0 && newsTick + i < newsTickerMsg.length()) {
+                    buffer += newsTickerMsg[newsTick + i];
+                } else {
+                    buffer += " ";
+                }
+            }
+            if (++newsTick > newsTickerMsg.length()+40) {
+                buffer += "\r ";
+                newsTick = 0;
+                newsTickerRunning = false;
+                srand(clock());
+                newsTickerTime = (rand()%60)+20;
+            }
+        }
+    }
 }
 
 int main(VOID) {
