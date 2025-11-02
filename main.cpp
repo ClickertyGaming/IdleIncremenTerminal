@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <cctype>
 using namespace std;
 
 typedef bool (WINAPI *RCIEX)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
@@ -33,6 +34,8 @@ BOOL WINAPI ReadConsoleInputExW(
 
 string buffer = "";
 
+string bigEmpty = "                                       ";
+
 HANDLE hStdin;
 HANDLE hStdout;
 DWORD fdwSaveOldMode;
@@ -43,6 +46,7 @@ VOID MouseEventProc(MOUSE_EVENT_RECORD);
 VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 void UpdateScreen(HANDLE, int);
 void UpdateNewsTicker();
+void ParseInput(string);
 
 string inputChars = "";
 int temp = 0;
@@ -129,30 +133,68 @@ int main(VOID) {
         // buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
         // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
 
+        buffer += "\n----------------------------------------\n";
+
         switch (menu) {
             case MENU_MAIN: // main menu
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n" + (string)"this is where the actual data goes";
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + (string)"this is where the actual data goes" + bigEmpty;
+                break;
+            case MENU_SETTINGS:
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                break;
+            case MENU_CREDITS:
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                break;
+            case MENU_HELP:
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + (string)"help menu" + bigEmpty;
                 break;
             default:
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
-                buffer += "\n";
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty;
+                buffer += "\n" + (string)"this is the default fallback screen" + bigEmpty;
                 break;
         }
 
@@ -195,6 +237,18 @@ int main(VOID) {
     return 0;
 }
 
+void ParseInput(string input) {
+    string lowerInput;
+    for (char c : input)
+    {
+        lowerInput += tolower(c);
+    }
+    
+    if (lowerInput == "help") {
+        menu = MENU_HELP;
+    }
+}
+
 void UpdateScreen(HANDLE hConsole, int delay) {
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     SMALL_RECT scrollRect;
@@ -224,11 +278,11 @@ void UpdateScreen(HANDLE hConsole, int delay) {
     cout << buffer;
     
     csbi.dwCursorPosition.X = 1;
-    csbi.dwCursorPosition.Y = 14;
+    csbi.dwCursorPosition.Y = 16;
 
     SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
 
-    cout << "                                                                                                                               ";
+    cout << bigEmpty;
 
     SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
 
@@ -282,7 +336,7 @@ VOID KeyEventProc(KEY_EVENT_RECORD ker) {
     cout << ker.uChar.AsciiChar << endl; */
     if (ker.bKeyDown) {
         if (ker.uChar.AsciiChar == 13) {
-            /* printf("enter"); */
+            ParseInput(inputChars);
             inputChars = "";
         }
         else if (ker.uChar.AsciiChar == 8 && inputChars.length() > 0) {
