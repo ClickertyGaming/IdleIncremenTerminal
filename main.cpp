@@ -75,6 +75,7 @@ int main(VOID) {
     newsTickerTime = (rand() % 60) + 20;
 
     system("title Idle IncremenTerminal");
+    system("cls");
 
     DWORD cNumRead, fdwMode, i;
     LPDWORD cNumUnread;
