@@ -7,6 +7,8 @@
 #include <ctime>
 using namespace std;
 
+typedef bool (WINAPI *RCIEX)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
+
 #ifndef CONSOLE_READ_NOREMOVE
 #define CONSOLE_READ_NOREMOVE   0x0001
 #endif
@@ -15,7 +17,7 @@ using namespace std;
 #define CONSOLE_READ_NOWAIT     0x0002
 #endif
 
-/* BOOL WINAPI ReadConsoleInputExA(
+BOOL WINAPI ReadConsoleInputExA(
     _In_ HANDLE hConsoleInput,
     _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
     _In_ DWORD nLength,
@@ -27,7 +29,7 @@ BOOL WINAPI ReadConsoleInputExW(
     _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
     _In_ DWORD nLength,
     _Out_ LPDWORD lpNumberOfEventsRead,
-    _In_ USHORT wFlags); */
+    _In_ USHORT wFlags);
 
 string buffer = "";
 
@@ -73,6 +75,9 @@ int main(VOID) {
     DWORD cNumRead, fdwMode, i;
     LPDWORD cNumUnread;
     INPUT_RECORD irInBuf[128], kirInBuf[128];
+
+    RCIEX fRCIEXA = (RCIEX)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExA");
+    RCIEX fRCIEXW = (RCIEX)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExW");
 
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     if (hStdin == INVALID_HANDLE_VALUE)
@@ -153,24 +158,13 @@ int main(VOID) {
 
         buffer += "\n>";
 
-        printf("\nbefore");
-
-        /* bool consoleInput = ReadConsoleInputEx(
-            hStdin,
-            irInBuf,
-            128,
-            &cNumRead
-        ); */
-
-        /* bool consoleInput = ReadConsoleInputExW(
+        bool consoleInput = fRCIEXW(
             hStdin,
             irInBuf,
             128,
             &cNumRead,
             (CONSOLE_READ_NOWAIT)
-        ); */
-
-        printf("\nafter");
+        );
 
         for (i = 0; i < cNumRead; i++) {
             switch (irInBuf[i].EventType) {
