@@ -59,8 +59,8 @@ bool newsTickerRunning = false; // Dictates if the news ticker is even showing a
 int newsTickerTime = 0; // Time between messages / scrolling speed
 string newsTickerMsg = ""; // The message pulled from the array
 int newsTick = 0; // Letter index in newsTickerMsg
-int newsSpeed = 2; // Scroll speed of newsTickerMsg
-string newsTickerMsgArr[2] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf"};
+int newsSpeed = 1; // Scroll speed of newsTickerMsg
+string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf", "no way this actually works dude"};
 
 /* TODO:
 Fix the news ticker function
@@ -246,7 +246,6 @@ void UpdateNewsTicker() {
             newsTickerRunning = true;
             srand(clock());
             newsTickerMsg = newsTickerMsgArr[rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0]))];
-            // buffer += to_string(rand()%(sizeof(newsTickerMsgArr)/sizeof(newsTickerMsgArr[0])));
         }
     }
     else {
