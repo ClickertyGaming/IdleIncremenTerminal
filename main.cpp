@@ -19,11 +19,21 @@ typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD,
 #endif
 
 string buffer = "";
-string bigEmpty = "                                       ";
+string bigEmpty = "";
 string menuBuffer[10] = {"\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty};
 HANDLE inputHandle;
 HANDLE outputHandle;
 DWORD modeFlagsOld;
+
+enum MenuState {
+    MENU_MAIN,
+    MENU_SETTINGS,
+    MENU_CREDITS,
+    MENU_HELP,
+    MENU_SWITCH
+};
+enum MenuState menu = MENU_MAIN;
+enum MenuState menuPrev = menu;
 
 VOID ErrorExit(LPCSTR);
 VOID KeyEventProc(KEY_EVENT_RECORD);
@@ -34,18 +44,13 @@ void UpdateNewsTicker();
 void ParseInput(string);
 void UpdateMenuLine(string, int);
 void UpdateMenuReset();
+void SetMenu(MenuState);
 int clampi(int, int, int);
 
 string inputChars = "";
 int temp = 0;
 
-enum MenuState {
-    MENU_MAIN,
-    MENU_SETTINGS,
-    MENU_CREDITS,
-    MENU_HELP
-};
-enum MenuState menu = MENU_MAIN;
+int screenWidth = 50;
 
 bool newsTickerRunning = false; // Dictates if the news ticker is even showing anything
 int newsTickerTime = 0; // Time between messages / scrolling speed
@@ -54,16 +59,16 @@ int newsTick = 0; // Letter index in newsTickerMsg
 int newsSpeed = 1; // Scroll speed of newsTickerMsg
 string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf", "no way this actually works dude"};
 
-/* TODO:
-Fix the news ticker function
-*/
-
 int main(VOID) {
     srand(time(0));
     newsTickerTime = (rand() % 60) + 20;
 
     system("title Idle IncremenTerminal");
     system("cls");
+
+    for (int i = 0; i < screenWidth; i++) {
+        bigEmpty += " ";
+    }
 
     DWORD numOfCharactersRead, modeFlags, i;
     LPDWORD numOfCharactersUnread;
@@ -89,8 +94,19 @@ int main(VOID) {
 
     while (true)
     {
-        buffer = "Idle IncremenTerminal v0.00a\nInput \"help\" for all possible commands!\n----------------------------------------\n";
-        
+        bigEmpty = "";
+        for (int i = 0; i < screenWidth; i++) {
+            bigEmpty += " ";
+        }
+
+        buffer = "Idle IncremenTerminal v0.00a\nInput \"menu help\" for all possible commands!";
+
+        buffer += "\n";
+        for (int i = 0; i < screenWidth; i++) {
+            buffer += "-";
+        }
+        buffer += "\n";
+
         UpdateNewsTicker();
 
         /* if (!newsTickerRunning) {
@@ -122,7 +138,11 @@ int main(VOID) {
         // buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
         // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
 
-        buffer += "\n----------------------------------------\n";
+        buffer += "\n";
+        for (int i = 0; i < screenWidth; i++) {
+            buffer += "-";
+        }
+        buffer += "\n";
 
         switch (menu) {
             case MENU_MAIN: // main menu
@@ -151,6 +171,7 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty; */
                 UpdateMenuReset();
+                UpdateMenuLine("settings menu", 10);
                 break;
             case MENU_CREDITS:
                 /* buffer += "\n" + bigEmpty;
@@ -164,6 +185,7 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty; */
                 UpdateMenuReset();
+                UpdateMenuLine("credits menu", 10);
                 break;
             case MENU_HELP:
                 /* buffer += "\n" + bigEmpty;
@@ -178,6 +200,15 @@ int main(VOID) {
                 buffer += "\n" + (string)"help menu" + bigEmpty; */
                 UpdateMenuReset();
                 UpdateMenuLine("help menu", 10);
+                break;
+            case MENU_SWITCH:
+                UpdateMenuReset();
+                UpdateMenuLine("> main          Main menu", 1);
+                UpdateMenuLine("> settings      Settings menu", 2);
+                UpdateMenuLine("> credits       Credits menu", 3);
+                UpdateMenuLine("> help          Help menu", 4);
+                UpdateMenuLine("> cancel        Go back to the previous menu", 9);
+                UpdateMenuLine("Enter the name of a menu to switch to it", 10);
                 break;
             default:
                 /* buffer += "\n" + bigEmpty;
@@ -201,13 +232,7 @@ int main(VOID) {
 
         buffer += "\n>";
 
-        bool consoleInput = ReadConsoleInputExW(
-            inputHandle,
-            inputRecordsInBuffer,
-            128,
-            &numOfCharactersRead,
-            (CONSOLE_READ_NOWAIT)
-        );
+        bool consoleInput = ReadConsoleInputExW(inputHandle, inputRecordsInBuffer, 128, &numOfCharactersRead, (CONSOLE_READ_NOWAIT));
 
         for (i = 0; i < numOfCharactersRead; i++) {
             switch (inputRecordsInBuffer[i].EventType) {
@@ -238,16 +263,33 @@ int main(VOID) {
     return 0;
 }
 
+// ------------------
+//  Custom functions
+// ------------------
+
 void ParseInput(string input) {
     string lowerInput;
     for (char c : input)
     {
         lowerInput += tolower(c);
     }
-    
-    if (lowerInput == "help") {
-        menu = MENU_HELP;
+    if (menu == MENU_SWITCH) {
+        if (lowerInput == "help") SetMenu(MENU_HELP);
+        else if (lowerInput == "main") SetMenu(MENU_MAIN);
+        else if (lowerInput == "settings") SetMenu(MENU_SETTINGS);
+        else if (lowerInput == "credits") SetMenu(MENU_CREDITS);
+        else if (lowerInput == "cancel") SetMenu(menuPrev);
     }
+    if (lowerInput == "menu") SetMenu(MENU_SWITCH);
+    else if (lowerInput == "menu help") SetMenu(MENU_HELP);
+    else if (lowerInput == "menu main") SetMenu(MENU_MAIN);
+    else if (lowerInput == "menu settings") SetMenu(MENU_SETTINGS);
+    else if (lowerInput == "menu credits") SetMenu(MENU_CREDITS);
+}
+
+void SetMenu(MenuState newMenu) {
+    menuPrev = menu;
+    menu = newMenu;
 }
 
 void UpdateMenuLine(string text, int lineNum) {
@@ -316,14 +358,14 @@ void UpdateNewsTicker() {
     else {
         if (--newsTickerTime == 0) {
             newsTickerTime = newsSpeed;
-            for (int i = -40; i < 0; i++) {
+            for (int i = -screenWidth; i < 0; i++) {
                 if (newsTick + i >= 0 && newsTick + i < newsTickerMsg.length()) {
                     buffer += newsTickerMsg[newsTick + i];
                 } else {
                     buffer += " ";
                 }
             }
-            if (++newsTick > newsTickerMsg.length()+40) {
+            if (++newsTick > newsTickerMsg.length()+screenWidth) {
                 buffer += "\r ";
                 newsTick = 0;
                 newsTickerRunning = false;
@@ -333,6 +375,10 @@ void UpdateNewsTicker() {
         }
     }
 }
+
+// ------------------------------------
+//  Microsoft's command line functions
+// ------------------------------------
 
 VOID ErrorExit(LPCSTR lpszMessage) {
     fprintf(stderr, "%s\n", lpszMessage);
@@ -349,6 +395,9 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
         if (keyInputRecord.uChar.AsciiChar == 13) {
             ParseInput(inputChars);
             inputChars = "";
+        }
+        else if (keyInputRecord.uChar.AsciiChar == 32) {
+            inputChars += " ";
         }
         else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) {
             inputChars.pop_back();
@@ -392,6 +441,10 @@ VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD windowBufferSizeRecord) {
     /* printf("Resize event\n");
     printf("Console screen buffer is %d columns by %d rows.\n", windowBufferSizeRecord.dwSize.X, windowBufferSizeRecord.dwSize.Y); */
 }
+
+// -------------------
+//  Utility functions
+// -------------------
 
 int clampi(int num, int min, int max) {
     num = num < min ? min: num;
