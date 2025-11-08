@@ -19,9 +19,8 @@ typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD,
 #endif
 
 string buffer = "";
-
 string bigEmpty = "                                       ";
-
+string menuBuffer[10] = {"\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty, "\n" + bigEmpty};
 HANDLE inputHandle;
 HANDLE outputHandle;
 DWORD modeFlagsOld;
@@ -33,6 +32,9 @@ VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 void UpdateScreen(HANDLE, int);
 void UpdateNewsTicker();
 void ParseInput(string);
+void UpdateMenuLine(string, int);
+void UpdateMenuReset();
+int clampi(int, int, int);
 
 string inputChars = "";
 int temp = 0;
@@ -124,6 +126,7 @@ int main(VOID) {
 
         switch (menu) {
             case MENU_MAIN: // main menu
+                /* buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
@@ -132,10 +135,12 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + (string)"this is where the actual data goes" + bigEmpty;
+                buffer += "\n" + (string)"this is where the actual data goes" + bigEmpty; */
+                UpdateMenuReset();
+                UpdateMenuLine("this is where the actual data goes", 10);
                 break;
             case MENU_SETTINGS:
+                /* buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
@@ -144,10 +149,11 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty; */
+                UpdateMenuReset();
                 break;
             case MENU_CREDITS:
+                /* buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
@@ -156,10 +162,11 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
+                buffer += "\n" + bigEmpty; */
+                UpdateMenuReset();
                 break;
             case MENU_HELP:
+                /* buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
@@ -168,10 +175,12 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + (string)"help menu" + bigEmpty;
+                buffer += "\n" + (string)"help menu" + bigEmpty; */
+                UpdateMenuReset();
+                UpdateMenuLine("help menu", 10);
                 break;
             default:
+                /* buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
@@ -180,9 +189,14 @@ int main(VOID) {
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
                 buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + (string)"this is the default fallback screen" + bigEmpty;
+                buffer += "\n" + (string)"this is the default fallback screen" + bigEmpty; */
+                UpdateMenuReset();
+                UpdateMenuLine("this is the default fallback screen", 10);
                 break;
+        }
+
+        for (int i = 0; i < (sizeof(menuBuffer)/sizeof(menuBuffer[0])); i++) {
+            buffer += menuBuffer[i];
         }
 
         buffer += "\n>";
@@ -233,6 +247,16 @@ void ParseInput(string input) {
     
     if (lowerInput == "help") {
         menu = MENU_HELP;
+    }
+}
+
+void UpdateMenuLine(string text, int lineNum) {
+    menuBuffer[clampi(lineNum-1, 0, 9)] = "\n" + text + bigEmpty;
+}
+
+void UpdateMenuReset() {
+    for (int i = 0; i < (sizeof(menuBuffer)/sizeof(menuBuffer[0])); i++) {
+        menuBuffer[i] = "\n" + bigEmpty;
     }
 }
 
@@ -367,5 +391,11 @@ VOID MouseEventProc(MOUSE_EVENT_RECORD mouseInputRecord) {
 VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD windowBufferSizeRecord) {
     /* printf("Resize event\n");
     printf("Console screen buffer is %d columns by %d rows.\n", windowBufferSizeRecord.dwSize.X, windowBufferSizeRecord.dwSize.Y); */
+}
+
+int clampi(int num, int min, int max) {
+    num = num < min ? min: num;
+    num = num > max ? max: num;
+    return num;
 }
 
