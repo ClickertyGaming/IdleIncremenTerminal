@@ -46,11 +46,12 @@ void UpdateMenuLine(string, int);
 void UpdateMenuReset();
 void SetMenu(MenuState);
 int clampi(int, int, int);
+string find(string, string);
 
 string inputChars = "";
 int temp = 0;
 
-int screenWidth = 50;
+int screenWidth = 60;
 
 bool newsTickerRunning = false; // Dictates if the news ticker is even showing anything
 int newsTickerTime = 0; // Time between messages / scrolling speed
@@ -145,60 +146,22 @@ int main(VOID) {
         buffer += "\n";
 
         switch (menu) {
-            case MENU_MAIN: // main menu
-                /* buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + (string)"this is where the actual data goes" + bigEmpty; */
+            case MENU_MAIN:
                 UpdateMenuReset();
                 UpdateMenuLine("this is where the actual data goes", 10);
                 break;
             case MENU_SETTINGS:
-                /* buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty; */
                 UpdateMenuReset();
                 UpdateMenuLine("settings menu", 10);
                 break;
             case MENU_CREDITS:
-                /* buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty; */
                 UpdateMenuReset();
+                UpdateMenuLine("Clickerty               Everything", 1);
                 UpdateMenuLine("credits menu", 10);
                 break;
             case MENU_HELP:
-                /* buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + (string)"help menu" + bigEmpty; */
                 UpdateMenuReset();
+                UpdateMenuLine("menu [<args>]           Shows a list of all available menus", 1);
                 UpdateMenuLine("help menu", 10);
                 break;
             case MENU_SWITCH:
@@ -211,16 +174,6 @@ int main(VOID) {
                 UpdateMenuLine("Enter the name of a menu to switch to it", 10);
                 break;
             default:
-                /* buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + bigEmpty;
-                buffer += "\n" + (string)"this is the default fallback screen" + bigEmpty; */
                 UpdateMenuReset();
                 UpdateMenuLine("this is the default fallback screen", 10);
                 break;
@@ -269,22 +222,27 @@ int main(VOID) {
 
 void ParseInput(string input) {
     string lowerInput;
-    for (char c : input)
-    {
-        lowerInput += tolower(c);
+    string splitInput[3] = {" ", " ", " "};
+    for (int i = 0; i < input.length(); i++) {
+        lowerInput += tolower(input[i]);
     }
+    /* for (int j = 0; j < (sizeof(splitInput)/sizeof(splitInput[0])); j++) {
+        splitInput[j] = find_str(lowerInput, " ");
+    } */
     if (menu == MENU_SWITCH) {
-        if (lowerInput == "help") SetMenu(MENU_HELP);
-        else if (lowerInput == "main") SetMenu(MENU_MAIN);
-        else if (lowerInput == "settings") SetMenu(MENU_SETTINGS);
-        else if (lowerInput == "credits") SetMenu(MENU_CREDITS);
-        else if (lowerInput == "cancel") SetMenu(menuPrev);
+        if (splitInput[0] == "help") SetMenu(MENU_HELP);
+        else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
+        else if (splitInput[0] == "settings") SetMenu(MENU_SETTINGS);
+        else if (splitInput[0] == "credits") SetMenu(MENU_CREDITS);
+        else if (splitInput[0] == "cancel") SetMenu(menuPrev);
     }
-    if (lowerInput == "menu") SetMenu(MENU_SWITCH);
-    else if (lowerInput == "menu help") SetMenu(MENU_HELP);
-    else if (lowerInput == "menu main") SetMenu(MENU_MAIN);
-    else if (lowerInput == "menu settings") SetMenu(MENU_SETTINGS);
-    else if (lowerInput == "menu credits") SetMenu(MENU_CREDITS);
+    if (splitInput[0] == "menu") {
+        if (splitInput[1] == "help") SetMenu(MENU_HELP);
+        else if (splitInput[1] == "main") SetMenu(MENU_MAIN);
+        else if (splitInput[1] == "settings") SetMenu(MENU_SETTINGS);
+        else if (splitInput[1] == "credits") SetMenu(MENU_CREDITS);
+        else SetMenu(menuPrev);
+    }
 }
 
 void SetMenu(MenuState newMenu) {
@@ -335,7 +293,7 @@ void UpdateScreen(HANDLE hConsole, int delay) {
 
     SetConsoleCursorPosition(hConsole, consoleScreenBufferInfo.dwCursorPosition);
 
-    cout << bigEmpty;
+    cout << bigEmpty << endl << bigEmpty << endl << bigEmpty << endl << bigEmpty << endl << bigEmpty << endl << bigEmpty << endl << bigEmpty;
 
     SetConsoleCursorPosition(hConsole, consoleScreenBufferInfo.dwCursorPosition);
 
@@ -396,13 +354,10 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
             ParseInput(inputChars);
             inputChars = "";
         }
-        else if (keyInputRecord.uChar.AsciiChar == 32) {
-            inputChars += " ";
-        }
         else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) {
             inputChars.pop_back();
         }
-        else if (keyInputRecord.uChar.AsciiChar > 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) {
+        else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) {
             inputChars.push_back(keyInputRecord.uChar.AsciiChar);
         }
     }
@@ -451,4 +406,5 @@ int clampi(int num, int min, int max) {
     num = num > max ? max: num;
     return num;
 }
+
 
