@@ -8,7 +8,7 @@
 #include <cctype>
 using namespace std;
 
-typedef bool (WINAPI *RCIEX)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
+typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
 
 #ifndef CONSOLE_READ_NOREMOVE
 #define CONSOLE_READ_NOREMOVE   0x0001
@@ -18,27 +18,13 @@ typedef bool (WINAPI *RCIEX)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
 #define CONSOLE_READ_NOWAIT     0x0002
 #endif
 
-BOOL WINAPI ReadConsoleInputExA(
-    _In_ HANDLE hConsoleInput,
-    _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
-    _In_ DWORD nLength,
-    _Out_ LPDWORD lpNumberOfEventsRead,
-    _In_ USHORT wFlags);
-
-BOOL WINAPI ReadConsoleInputExW(
-    _In_ HANDLE hConsoleInput,
-    _Out_writes_(nLength) PINPUT_RECORD lpBuffer,
-    _In_ DWORD nLength,
-    _Out_ LPDWORD lpNumberOfEventsRead,
-    _In_ USHORT wFlags);
-
 string buffer = "";
 
 string bigEmpty = "                                       ";
 
-HANDLE hStdin;
-HANDLE hStdout;
-DWORD fdwSaveOldMode;
+HANDLE inputHandle;
+HANDLE outputHandle;
+DWORD modeFlagsOld;
 
 VOID ErrorExit(LPCSTR);
 VOID KeyEventProc(KEY_EVENT_RECORD);
@@ -77,26 +63,26 @@ int main(VOID) {
     system("title Idle IncremenTerminal");
     system("cls");
 
-    DWORD cNumRead, fdwMode, i;
-    LPDWORD cNumUnread;
-    INPUT_RECORD irInBuf[128], kirInBuf[128];
+    DWORD numOfCharactersRead, modeFlags, i;
+    LPDWORD numOfCharactersUnread;
+    INPUT_RECORD inputRecordsInBuffer[128], keyInputRecordsInBuffer[128];
 
-    RCIEX fRCIEXA = (RCIEX)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExA");
-    RCIEX fRCIEXW = (RCIEX)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExW");
+    ReadConsoleInputEx ReadConsoleInputExA = (ReadConsoleInputEx)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExA");
+    ReadConsoleInputEx ReadConsoleInputExW = (ReadConsoleInputEx)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExW");
 
-    hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (hStdin == INVALID_HANDLE_VALUE)
+    inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+    if (inputHandle == INVALID_HANDLE_VALUE)
         ErrorExit("GetStdHandle");
 
-    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hStdout == INVALID_HANDLE_VALUE)
+    outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (outputHandle == INVALID_HANDLE_VALUE)
         ErrorExit("GetStdHandle");
     
-    if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
+    if (!GetConsoleMode(inputHandle, &modeFlagsOld))
         ErrorExit("GetConsoleMode");
     
-    fdwMode = (ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE & ~ENABLE_ECHO_INPUT;
-    if (!SetConsoleMode(hStdin, fdwMode))
+    modeFlags = (ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS) & ~ENABLE_QUICK_EDIT_MODE & ~ENABLE_ECHO_INPUT;
+    if (!SetConsoleMode(inputHandle, modeFlags))
         ErrorExit("SetConsoleMode");
 
     while (true)
@@ -201,18 +187,18 @@ int main(VOID) {
 
         buffer += "\n>";
 
-        bool consoleInput = fRCIEXW(
-            hStdin,
-            irInBuf,
+        bool consoleInput = ReadConsoleInputExW(
+            inputHandle,
+            inputRecordsInBuffer,
             128,
-            &cNumRead,
+            &numOfCharactersRead,
             (CONSOLE_READ_NOWAIT)
         );
 
-        for (i = 0; i < cNumRead; i++) {
-            switch (irInBuf[i].EventType) {
+        for (i = 0; i < numOfCharactersRead; i++) {
+            switch (inputRecordsInBuffer[i].EventType) {
                 case KEY_EVENT:
-                    KeyEventProc(irInBuf[i].Event.KeyEvent);
+                    KeyEventProc(inputRecordsInBuffer[i].Event.KeyEvent);
                     break;
                 case MOUSE_EVENT:
                     break;
@@ -227,13 +213,13 @@ int main(VOID) {
             }
         }
 
-        UpdateScreen(hStdout, 100);
+        UpdateScreen(outputHandle, 100);
         /* cout << buffer;
         Sleep(100);
         buffer = ""; */
     }
 
-    SetConsoleMode(hStdin, fdwSaveOldMode);
+    SetConsoleMode(inputHandle, modeFlagsOld);
 
     return 0;
 }
@@ -251,41 +237,41 @@ void ParseInput(string input) {
 }
 
 void UpdateScreen(HANDLE hConsole, int delay) {
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
     SMALL_RECT scrollRect;
     COORD scrollTarget;
     CHAR_INFO fill;
 
-    if (!GetConsoleScreenBufferInfo(hConsole, &csbi)) return;
+    if (!GetConsoleScreenBufferInfo(hConsole, &consoleScreenBufferInfo)) return;
 
     /* scrollRect.Left = 0;
     scrollRect.Top = 0;
-    scrollRect.Right = csbi.dwSize.X;
-    scrollRect.Bottom = csbi.dwSize.Y;
+    scrollRect.Right = consoleScreenBufferInfo.dwSize.X;
+    scrollRect.Bottom = consoleScreenBufferInfo.dwSize.Y;
 
     scrollTarget.X = 0;
-    scrollTarget.Y = (SHORT)(0 - csbi.dwSize.Y);
+    scrollTarget.Y = (SHORT)(0 - consoleScreenBufferInfo.dwSize.Y);
 
     fill.Char.UnicodeChar = TEXT(' ');
-    fill.Attributes = csbi.wAttributes;
+    fill.Attributes = consoleScreenBufferInfo.wAttributes;
 
     ScrollConsoleScreenBuffer(hConsole, &scrollRect, NULL, scrollTarget, &fill); */
 
-    csbi.dwCursorPosition.X = 0;
-    csbi.dwCursorPosition.Y = 0;
+    consoleScreenBufferInfo.dwCursorPosition.X = 0;
+    consoleScreenBufferInfo.dwCursorPosition.Y = 0;
 
-    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+    SetConsoleCursorPosition(hConsole, consoleScreenBufferInfo.dwCursorPosition);
 
     cout << buffer;
     
-    csbi.dwCursorPosition.X = 1;
-    csbi.dwCursorPosition.Y = 16;
+    consoleScreenBufferInfo.dwCursorPosition.X = 1;
+    consoleScreenBufferInfo.dwCursorPosition.Y = 16;
 
-    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+    SetConsoleCursorPosition(hConsole, consoleScreenBufferInfo.dwCursorPosition);
 
     cout << bigEmpty;
 
-    SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
+    SetConsoleCursorPosition(hConsole, consoleScreenBufferInfo.dwCursorPosition);
 
     cout << inputChars;
 
@@ -326,38 +312,38 @@ void UpdateNewsTicker() {
 
 VOID ErrorExit(LPCSTR lpszMessage) {
     fprintf(stderr, "%s\n", lpszMessage);
-    SetConsoleMode(hStdin, fdwSaveOldMode);
+    SetConsoleMode(inputHandle, modeFlagsOld);
     ExitProcess(0);
 }
 
-VOID KeyEventProc(KEY_EVENT_RECORD ker) {
+VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
     /* printf("Key event: ");
-    if (ker.bKeyDown) printf("key pressed: ");
+    if (keyInputRecord.bKeyDown) printf("key pressed: ");
     else printf("key released: ");
-    cout << ker.uChar.AsciiChar << endl; */
-    if (ker.bKeyDown) {
-        if (ker.uChar.AsciiChar == 13) {
+    cout << keyInputRecord.uChar.AsciiChar << endl; */
+    if (keyInputRecord.bKeyDown) {
+        if (keyInputRecord.uChar.AsciiChar == 13) {
             ParseInput(inputChars);
             inputChars = "";
         }
-        else if (ker.uChar.AsciiChar == 8 && inputChars.length() > 0) {
+        else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) {
             inputChars.pop_back();
         }
-        else if (ker.uChar.AsciiChar > 32 && ker.uChar.AsciiChar < 127 && inputChars.length() < 128) {
-            inputChars.push_back(ker.uChar.AsciiChar);
+        else if (keyInputRecord.uChar.AsciiChar > 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) {
+            inputChars.push_back(keyInputRecord.uChar.AsciiChar);
         }
     }
 }
 
-VOID MouseEventProc(MOUSE_EVENT_RECORD mer) {
+VOID MouseEventProc(MOUSE_EVENT_RECORD mouseInputRecord) {
     #ifndef MOUSE_HWHEELED
     #define MOUSE_HWHEELED 0x0008
     #endif
         /* printf("Mouse event: "); */
-        switch(mer.dwEventFlags) {
+        switch(mouseInputRecord.dwEventFlags) {
             case 0:
-                /* if (mer.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) printf("left button press \n");
-                else if (mer.dwButtonState == RIGHTMOST_BUTTON_PRESSED) printf ("right button press \n");
+                /* if (mouseInputRecord.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) printf("left button press \n");
+                else if (mouseInputRecord.dwButtonState == RIGHTMOST_BUTTON_PRESSED) printf ("right button press \n");
                 else printf("button press\n"); */
                 break;
             case DOUBLE_CLICK:
@@ -378,8 +364,8 @@ VOID MouseEventProc(MOUSE_EVENT_RECORD mer) {
         }
 }
 
-VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr) {
+VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD windowBufferSizeRecord) {
     /* printf("Resize event\n");
-    printf("Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y); */
+    printf("Console screen buffer is %d columns by %d rows.\n", windowBufferSizeRecord.dwSize.X, windowBufferSizeRecord.dwSize.Y); */
 }
 
