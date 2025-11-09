@@ -8,6 +8,9 @@
 #include <cctype>
 using namespace std;
 
+#define and &&
+#define or ||
+
 typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
 
 #ifndef CONSOLE_READ_NOREMOVE
@@ -45,8 +48,8 @@ void ParseInput(string);
 void UpdateMenuLine(string, int);
 void UpdateMenuReset();
 void SetMenu(MenuState);
-int clampi(int, int, int);
-string find(string, string);
+int ClampInt(int, int, int);
+string FindInStr(string, string, int);
 
 string inputChars = "";
 int temp = 0;
@@ -109,35 +112,6 @@ int main(VOID) {
         buffer += "\n";
 
         UpdateNewsTicker();
-
-        /* if (!newsTickerRunning) {
-            newsTickerRunning = bool(--newsTickerTime == 0);
-            if (newsTickerRunning) {
-                newsTickerTime = 3;
-                srand(clock());
-                newsTickerMsg = newsTickerMsgArr[rand()%(newsTickerMsgArr->length())];
-            }
-        } else {
-            if (--newsTickerTime == 0) {
-                newsTickerTime = 3;
-                for (i = -40; i < 0; i++) {
-                    if (newsTick + i < 0 || newsTick + i >= newsTickerMsg.length()) {
-                        buffer += "";
-                    } else {
-                        buffer += newsTickerMsg[newsTick + i];
-                    }
-                }
-                if (++newsTick >= newsTickerMsg.length()+40) {
-                    newsTick = 0;
-                    newsTickerRunning = false;
-                    srand(clock());
-                    newsTickerTime = (rand() % 60) + 20;
-                }
-            }   
-        } */
-
-        // buffer += "\n" + to_string((int)newsTickerRunning) + "\n" + newsTickerMsg + "\n" + to_string(newsTickerTime) + "\n";
-        // cout << endl << newsTickerRunning << endl << newsTickerMsg << endl << newsTickerTime << endl;
 
         buffer += "\n";
         for (int i = 0; i < screenWidth; i++) {
@@ -206,9 +180,6 @@ int main(VOID) {
         }
 
         UpdateScreen(outputHandle, 100);
-        /* cout << buffer;
-        Sleep(100);
-        buffer = ""; */
     }
 
     SetConsoleMode(inputHandle, modeFlagsOld);
@@ -226,9 +197,17 @@ void ParseInput(string input) {
     for (int i = 0; i < input.length(); i++) {
         lowerInput += tolower(input[i]);
     }
-    /* for (int j = 0; j < (sizeof(splitInput)/sizeof(splitInput[0])); j++) {
-        splitInput[j] = find_str(lowerInput, " ");
-    } */
+    if (lowerInput.find_first_of(" ") == string::npos)
+        splitInput[0] = lowerInput;
+    else {
+        splitInput[0] = FindInStr(lowerInput, " ", 0);
+        if (lowerInput.find_first_of(" ") == lowerInput.find_last_of(" ")) {
+            splitInput[1] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
+        } else {
+            splitInput[1] = FindInStr(lowerInput, " ", 1);
+            splitInput[2] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
+        }
+    }
     if (menu == MENU_SWITCH) {
         if (splitInput[0] == "help") SetMenu(MENU_HELP);
         else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
@@ -241,7 +220,7 @@ void ParseInput(string input) {
         else if (splitInput[1] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[1] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[1] == "credits") SetMenu(MENU_CREDITS);
-        else SetMenu(menuPrev);
+        else if (splitInput[1] == "" and menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
     }
 }
 
@@ -251,7 +230,7 @@ void SetMenu(MenuState newMenu) {
 }
 
 void UpdateMenuLine(string text, int lineNum) {
-    menuBuffer[clampi(lineNum-1, 0, 9)] = "\n" + text + bigEmpty;
+    menuBuffer[ClampInt(lineNum-1, 0, 9)] = "\n" + text + bigEmpty;
 }
 
 void UpdateMenuReset() {
@@ -401,10 +380,19 @@ VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD windowBufferSizeRecord) {
 //  Utility functions
 // -------------------
 
-int clampi(int num, int min, int max) {
+int ClampInt(int num, int min, int max) {
     num = num < min ? min: num;
     num = num > max ? max: num;
     return num;
 }
 
-
+string FindInStr(string str, string delimiter, int index) {
+    int i = 0;
+    string temp;
+    do {
+        temp = str.substr(0, str.find(delimiter));
+        str.erase(0, str.find(delimiter) + delimiter.length());
+        i++;
+    } while (i <= index);
+    return temp;
+}
