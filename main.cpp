@@ -46,6 +46,7 @@ void UpdateMenuLine(string, int);
 void UpdateMenuReset();
 void SetMenu(MenuState);
 int ClampInt(int, int, int);
+int WrapInt(int, int, int);
 string FindInStr(string, string, int);
 
 string inputChars = "";
@@ -59,6 +60,9 @@ string newsTickerMsg = ""; // The message pulled from the array
 int newsTick = 0; // Letter index in newsTickerMsg
 int newsSpeed = 1; // Scroll speed of newsTickerMsg
 string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf", "no way this actually works dude"};
+
+int help_page = 0;
+int help_pages = 0;
 
 int main(VOID) {
     srand(time(0));
@@ -133,7 +137,7 @@ int main(VOID) {
             case MENU_HELP:
                 UpdateMenuReset();
                 UpdateMenuLine("menu [<args>]           Shows a list of all available menus", 1);
-                UpdateMenuLine("help menu", 10);
+                // UpdateMenuLine(to_string(help_page) + "/" + to_string(help_pages), 10);
                 break;
             case MENU_SWITCH:
                 UpdateMenuReset();
@@ -329,12 +333,10 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
             ParseInput(inputChars);
             inputChars = "";
         }
-        else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) {
-            inputChars.pop_back();
-        }
-        else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) {
-            inputChars.push_back(keyInputRecord.uChar.AsciiChar);
-        }
+        else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) inputChars.pop_back();
+        else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) inputChars.push_back(keyInputRecord.uChar.AsciiChar);
+        else if (menu == MENU_HELP && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 0, help_pages);
+        else if (menu == MENU_HELP && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 0, help_pages);
     }
 }
 
@@ -380,6 +382,12 @@ int ClampInt(int num, int min, int max) {
     num = num < min ? min: num;
     num = num > max ? max: num;
     return num;
+}
+
+int WrapInt(int num, int min, int max) {
+	num = num < min ? max: num;
+	num = num > max ? min: num;
+	return num;
 }
 
 string FindInStr(string str, string delimiter, int index) {
