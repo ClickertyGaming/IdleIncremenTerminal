@@ -30,7 +30,8 @@ enum MenuState {
     MENU_SETTINGS,
     MENU_CREDITS,
     MENU_HELP,
-    MENU_SWITCH
+    MENU_SWITCH,
+    MENU_MANUAL
 };
 enum MenuState menu = MENU_MAIN;
 enum MenuState menuPrev = menu;
@@ -61,8 +62,8 @@ int newsTick = 0; // Letter index in newsTickerMsg
 int newsSpeed = 1; // Scroll speed of newsTickerMsg
 string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf", "no way this actually works dude"};
 
-int help_page = 0;
-int help_pages = 0;
+int help_page = 1;
+int help_pages = 3;
 
 int main(VOID) {
     srand(time(0));
@@ -136,15 +137,20 @@ int main(VOID) {
                 break;
             case MENU_HELP:
                 UpdateMenuReset();
-                UpdateMenuLine("menu [<args>]           Shows a list of all available menus", 1);
-                // UpdateMenuLine(to_string(help_page) + "/" + to_string(help_pages), 10);
+                UpdateMenuLine("menu [<args>]         Shows a list of all available menus", 1);
+                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 10);
                 break;
+            case MENU_MANUAL:
+            	UpdateMenuReset();
+            	UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
+            	break;
             case MENU_SWITCH:
                 UpdateMenuReset();
                 UpdateMenuLine("> main          Main menu", 1);
                 UpdateMenuLine("> settings      Settings menu", 2);
                 UpdateMenuLine("> credits       Credits menu", 3);
                 UpdateMenuLine("> help          Help menu", 4);
+                UpdateMenuLine("> manual        Manual", 5);
                 UpdateMenuLine("> cancel        Go back to the previous menu", 9);
                 UpdateMenuLine("Enter the name of a menu to switch to it", 10);
                 break;
@@ -213,6 +219,7 @@ void ParseInput(string input) {
         else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[0] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[0] == "credits") SetMenu(MENU_CREDITS);
+        else if (splitInput[0] == "manual") SetMenu(MENU_MANUAL);
         else if (splitInput[0] == "cancel") SetMenu(menuPrev);
     }
     if (splitInput[0] == "menu") {
@@ -220,6 +227,7 @@ void ParseInput(string input) {
         else if (splitInput[1] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[1] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[1] == "credits") SetMenu(MENU_CREDITS);
+        else if (splitInput[1] == "manual") SetMenu(MENU_MANUAL);
         else if (menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
     }
 }
@@ -335,8 +343,8 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
         }
         else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) inputChars.pop_back();
         else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) inputChars.push_back(keyInputRecord.uChar.AsciiChar);
-        else if (menu == MENU_HELP && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 0, help_pages);
-        else if (menu == MENU_HELP && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 0, help_pages);
+        else if (menu == MENU_MANUAL && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 1, help_pages);
+        else if (menu == MENU_MANUAL && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 1, help_pages);
     }
 }
 
