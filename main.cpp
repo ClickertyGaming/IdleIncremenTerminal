@@ -8,9 +8,6 @@
 #include <cctype>
 using namespace std;
 
-#define and &&
-#define or ||
-
 typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
 
 #ifndef CONSOLE_READ_NOREMOVE
