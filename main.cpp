@@ -137,7 +137,8 @@ int main(VOID) {
                 break;
             case MENU_HELP:
                 UpdateMenuReset();
-                UpdateMenuLine("menu [<args>]         Shows a list of all available menus", 1);
+                UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1);
+                UpdateMenuLine("    - Leave empty to see a list of all available menus", 2);
                 UpdateMenuLine("help [<command>]      Extra info about the inputted command", 10);
                 break;
             case MENU_MANUAL:
