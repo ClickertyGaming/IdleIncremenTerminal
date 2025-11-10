@@ -194,9 +194,8 @@ void ParseInput(string input) {
     for (int i = 0; i < input.length(); i++) {
         lowerInput += tolower(input[i]);
     }
-    if (lowerInput.find_first_of(" ") == string::npos)
-        splitInput[0] = lowerInput;
-    else {
+    splitInput[0] = lowerInput;
+    if (lowerInput.find(" ") != string::npos) {
         splitInput[0] = FindInStr(lowerInput, " ", 0);
         if (lowerInput.find_first_of(" ") == lowerInput.find_last_of(" ")) {
             splitInput[1] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
@@ -217,7 +216,7 @@ void ParseInput(string input) {
         else if (splitInput[1] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[1] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[1] == "credits") SetMenu(MENU_CREDITS);
-        else if (splitInput[1] == "" and menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
+        else if (menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
     }
 }
 
