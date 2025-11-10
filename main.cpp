@@ -64,6 +64,7 @@ string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjo
 
 int help_page = 1;
 int help_pages = 3;
+string command = "";
 
 int main(VOID) {
     srand(time(0));
@@ -139,7 +140,8 @@ int main(VOID) {
                 UpdateMenuReset();
                 UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1);
                 UpdateMenuLine("    - Leave empty to see a list of all available menus", 2);
-                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 10);
+                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 9);
+                UpdateMenuLine("    - Alias: manual [<command>]", 10);
                 break;
             case MENU_MANUAL:
             	UpdateMenuReset();
@@ -209,22 +211,39 @@ void ParseInput(string input) {
     if (lowerInput.find(" ") != string::npos) {
         splitInput[0] = FindInStr(lowerInput, " ", 0);
         if (lowerInput.find_first_of(" ") == lowerInput.find_last_of(" ")) {
-            splitInput[1] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
+        	if (lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1) == "")
+				splitInput[1] = " ";
+            else
+				splitInput[1] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
         } else {
             splitInput[1] = FindInStr(lowerInput, " ", 1);
-            splitInput[2] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
+            if (lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1) == "")
+				splitInput[2] = " ";
+            else
+				splitInput[2] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
         }
     }
     if (menu == MENU_SWITCH) {
-        if (splitInput[0] == "help") SetMenu(MENU_HELP);
+        if (splitInput[0] == "help") {
+        	if (splitInput[1] == " " && splitInput[2] == " ") SetMenu(MENU_HELP);
+        	else SetMenu(MENU_MANUAL);
+			command = splitInput[1];
+		}
         else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[0] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[0] == "credits") SetMenu(MENU_CREDITS);
-        else if (splitInput[0] == "manual") SetMenu(MENU_MANUAL);
+        else if (splitInput[0] == "manual" ) {
+        	SetMenu(MENU_MANUAL);
+			command = splitInput[1];
+		}
         else if (splitInput[0] == "cancel") SetMenu(menuPrev);
     }
     if (splitInput[0] == "menu") {
-        if (splitInput[1] == "help") SetMenu(MENU_HELP);
+        if (splitInput[1] == "help") {
+        	if (splitInput[2] == " ") SetMenu(MENU_HELP);
+        	else SetMenu(MENU_MANUAL);
+        	command = splitInput[2];
+		}
         else if (splitInput[1] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[1] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[1] == "credits") SetMenu(MENU_CREDITS);
@@ -239,7 +258,7 @@ void SetMenu(MenuState newMenu) {
 }
 
 void UpdateMenuLine(string text, int lineNum) {
-    menuBuffer[ClampInt(lineNum-1, 0, 9)] = "\n" + text + bigEmpty;
+	menuBuffer[ClampInt(lineNum-1, 0, 9)] = "\n" + text + bigEmpty;
 }
 
 void UpdateMenuReset() {
