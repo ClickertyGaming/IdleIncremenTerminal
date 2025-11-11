@@ -135,7 +135,7 @@ map<string, string> manual = {
 	{"menu", "a"}
 };
 
-bool debug = true;
+bool debug = false;
 string debugInfo = "";
 
 int main() {
