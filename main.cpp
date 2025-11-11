@@ -1,3 +1,67 @@
+/*
+  ___    _ _        ___                                        _____                   _             _ 
+ |_ _|__| | | ___  |_ _|_ __   ___ _ __ ___ _ __ ___   ___ _ _|_   _|__ _ __ _ __ ___ (_)_ __   __ _| |
+  | |/ _` | |/ _ \  | || '_ \ / __| '__/ _ \ '_ ` _ \ / _ \ '_ \| |/ _ \ '__| '_ ` _ \| | '_ \ / _` | |
+  | | (_| | |  __/  | || | | | (__| | |  __/ | | | | |  __/ | | | |  __/ |  | | | | | | | | | | (_| | |
+ |___\__,_|_|\___| |___|_| |_|\___|_|  \___|_| |_| |_|\___|_| |_|_|\___|_|  |_| |_| |_|_|_| |_|\__,_|_|
+
+MIT License
+
+Copyright (c) 2025 Clickerty
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+A full idle incremental running entirely within Windows Terminal! Made in C++
+
+If you're here to look for clues and secrets in the final game:
+  ____   ____ ____      _    __  __ _ _ _ 
+ / ___| / ___|  _ \    / \  |  \/  | | | |
+ \___ \| |   | |_) |  / _ \ | |\/| | | | |
+  ___) | |___|  _ <  / ___ \| |  | |_|_|_|
+ |____/ \____|_| \_\/_/   \_\_|  |_(_|_|_)
+                                          
+Don't ruin the fun!!! (please)                                    
+
+If you're here to analyze the code and see how some things are done:
+
+Welcome! If you want to contribute to this project, issues and pull requests are always happily appreciated!
+
+
+
+
+
+If you think this game is too similar to something like Antimatter Dimensions (which you should play if you haven't):
+
+shut up no it isn't
+
+
+
+
+
+
+
+
+extra padding so no code is immediately visible
+*/
+
 #include <iostream>
 #include <Windows.h>
 #include <stdio.h>
@@ -6,6 +70,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cctype>
+#include <array>
 using namespace std;
 
 typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
@@ -48,7 +113,7 @@ void UpdateMenuReset();
 void SetMenu(MenuState);
 int ClampInt(int, int, int);
 int WrapInt(int, int, int);
-string FindInStr(string, string, int);
+string FindInStr(string, char, int);
 
 string inputChars = "";
 int temp = 0;
@@ -66,7 +131,10 @@ int help_page = 1;
 int help_pages = 3;
 string command = "";
 
-int main(VOID) {
+bool debug = true;
+string debugInfo = "";
+
+int main() {
     srand(time(0));
     newsTickerTime = (rand() % 60) + 20;
 
@@ -106,7 +174,9 @@ int main(VOID) {
             bigEmpty += " ";
         }
 
-        buffer = "Idle IncremenTerminal v0.00a\nInput \"menu help\" for all possible commands!";
+        buffer = "Idle IncremenTerminal v0.00a\n" + bigEmpty + "\r";
+        if (debug == true) buffer += debugInfo;
+        else buffer += "Input \"menu help\" for all possible commands!";
 
         buffer += "\n";
         for (int i = 0; i < screenWidth; i++) {
@@ -207,26 +277,17 @@ void ParseInput(string input) {
     for (int i = 0; i < input.length(); i++) {
         lowerInput += tolower(input[i]);
     }
-    splitInput[0] = lowerInput;
-    if (lowerInput.find(" ") != string::npos) {
-        splitInput[0] = FindInStr(lowerInput, " ", 0);
-        if (lowerInput.find_first_of(" ") == lowerInput.find_last_of(" ")) {
-        	if (lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1) == "")
-				splitInput[1] = " ";
-            else
-				splitInput[1] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
-        } else {
-            splitInput[1] = FindInStr(lowerInput, " ", 1);
-            if (lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1) == "")
-				splitInput[2] = " ";
-            else
-				splitInput[2] = lowerInput.substr(lowerInput.find_last_of(" ") + 1, lowerInput.length() - 1);
-        }
-    }
+    if (lowerInput == "debug") debug = debug ? false: true;
+    splitInput[0] = FindInStr(lowerInput, ' ', 0);
+    splitInput[1] = FindInStr(lowerInput, ' ', 1);
+    splitInput[2] = FindInStr(lowerInput, ' ', 2);
+    debugInfo = splitInput[0] + " " + splitInput[1] + " " + splitInput[2];
     if (menu == MENU_SWITCH) {
         if (splitInput[0] == "help") {
-        	if (splitInput[1] == " " && splitInput[2] == " ") SetMenu(MENU_HELP);
-        	else SetMenu(MENU_MANUAL);
+        	if (splitInput[1] == " ")
+				SetMenu(MENU_HELP);
+        	else
+				SetMenu(MENU_MANUAL);
 			command = splitInput[1];
 		}
         else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
@@ -239,11 +300,7 @@ void ParseInput(string input) {
         else if (splitInput[0] == "cancel") SetMenu(menuPrev);
     }
     if (splitInput[0] == "menu") {
-        if (splitInput[1] == "help") {
-        	if (splitInput[2] == " ") SetMenu(MENU_HELP);
-        	else SetMenu(MENU_MANUAL);
-        	command = splitInput[2];
-		}
+        if (splitInput[1] == "help") SetMenu(MENU_HELP);
         else if (splitInput[1] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[1] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[1] == "credits") SetMenu(MENU_CREDITS);
@@ -418,13 +475,19 @@ int WrapInt(int num, int min, int max) {
 	return num;
 }
 
-string FindInStr(string str, string delimiter, int index) {
-    int i = 0;
-    string temp;
-    do {
-        temp = str.substr(0, str.find(delimiter));
-        str.erase(0, str.find(delimiter) + delimiter.length());
-        i++;
-    } while (i <= index);
-    return temp;
+string FindInStr(string str, char delimiter, int index) {
+	string temp = "";
+	string tempStr = str;
+	int i = 0;
+	while (i <= index) {
+		if (tempStr.find_first_of(delimiter) != string::npos) {
+			temp = tempStr.substr(0, tempStr.find_first_of(delimiter));
+			tempStr.erase(0, tempStr.find_first_of(delimiter) + 1);
+		} else {
+			i = index;
+			temp = tempStr;
+		}
+		i++;
+	}
+	return temp;
 }
