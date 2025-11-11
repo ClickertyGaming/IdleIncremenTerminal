@@ -71,6 +71,7 @@ extra padding so no code is immediately visible
 #include <ctime>
 #include <cctype>
 #include <array>
+#include <map>
 using namespace std;
 
 typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
@@ -128,8 +129,11 @@ int newsSpeed = 1; // Scroll speed of newsTickerMsg
 string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf", "no way this actually works dude"};
 
 int help_page = 1;
-int help_pages = 3;
+int help_pages = 1;
 string command = "";
+map<string, string> manual = {
+	{"menu", "a"}
+};
 
 bool debug = true;
 string debugInfo = "";
@@ -147,7 +151,7 @@ int main() {
 
     DWORD numOfCharactersRead, modeFlags, i;
     LPDWORD numOfCharactersUnread;
-    INPUT_RECORD inputRecordsInBuffer[128], keyInputRecordsInBuffer[128];
+    INPUT_RECORD inputRecordsInBuffer[screenWidth], keyInputRecordsInBuffer[screenWidth];
 
     ReadConsoleInputEx ReadConsoleInputExA = (ReadConsoleInputEx)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExA");
     ReadConsoleInputEx ReadConsoleInputExW = (ReadConsoleInputEx)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ReadConsoleInputExW");
@@ -210,12 +214,22 @@ int main() {
                 UpdateMenuReset();
                 UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1);
                 UpdateMenuLine("    - Leave empty to see a list of all available menus", 2);
-                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 9);
+                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 8);
+                UpdateMenuLine("    - Tip: Leave <command> empty for a complete manual", 9);
                 UpdateMenuLine("    - Alias: manual [<command>]", 10);
                 break;
             case MENU_MANUAL:
             	UpdateMenuReset();
-            	UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
+            	if (manual.count(command) == 0) {
+            	UpdateMenuLine("Command not recognized. Input \"help\" with no arguments", 1);
+            	UpdateMenuLine("for a complete list of every available command. Learn more", 2);
+            	UpdateMenuLine("about each command by inputting \"help [<command>]\" or", 3);
+            	UpdateMenuLine("\"manual [<command>]\"", 4);
+				} else {
+					UpdateMenuLine("> " + command, 1);
+					UpdateMenuLine(manual.at(command), 2);
+					UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
+				}
             	break;
             case MENU_SWITCH:
                 UpdateMenuReset();
@@ -239,7 +253,7 @@ int main() {
 
         buffer += "\n>";
 
-        bool consoleInput = ReadConsoleInputExW(inputHandle, inputRecordsInBuffer, 128, &numOfCharactersRead, (CONSOLE_READ_NOWAIT));
+        bool consoleInput = ReadConsoleInputExW(inputHandle, inputRecordsInBuffer, screenWidth, &numOfCharactersRead, (CONSOLE_READ_NOWAIT));
 
         for (i = 0; i < numOfCharactersRead; i++) {
             switch (inputRecordsInBuffer[i].EventType) {
@@ -283,20 +297,11 @@ void ParseInput(string input) {
     splitInput[2] = FindInStr(lowerInput, ' ', 2);
     debugInfo = splitInput[0] + " " + splitInput[1] + " " + splitInput[2];
     if (menu == MENU_SWITCH) {
-        if (splitInput[0] == "help") {
-        	if (splitInput[1] == " ")
-				SetMenu(MENU_HELP);
-        	else
-				SetMenu(MENU_MANUAL);
-			command = splitInput[1];
-		}
+        if (splitInput[0] == "help") SetMenu(MENU_HELP);
         else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
         else if (splitInput[0] == "settings") SetMenu(MENU_SETTINGS);
         else if (splitInput[0] == "credits") SetMenu(MENU_CREDITS);
-        else if (splitInput[0] == "manual" ) {
-        	SetMenu(MENU_MANUAL);
-			command = splitInput[1];
-		}
+        else if (splitInput[0] == "manual" ) SetMenu(MENU_MANUAL);
         else if (splitInput[0] == "cancel") SetMenu(menuPrev);
     }
     if (splitInput[0] == "menu") {
@@ -307,6 +312,10 @@ void ParseInput(string input) {
         else if (splitInput[1] == "manual") SetMenu(MENU_MANUAL);
         else if (menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
     }
+    if (splitInput[0] == "help" || splitInput[0] == "manual") {
+    	command = splitInput[1] == splitInput[0] ? "": splitInput[1];
+    	SetMenu(MENU_MANUAL);
+	}
 }
 
 void SetMenu(MenuState newMenu) {
@@ -419,7 +428,7 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
             inputChars = "";
         }
         else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) inputChars.pop_back();
-        else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < 128) inputChars.push_back(keyInputRecord.uChar.AsciiChar);
+        else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < screenWidth) inputChars.push_back(keyInputRecord.uChar.AsciiChar);
         else if (menu == MENU_MANUAL && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 1, help_pages);
         else if (menu == MENU_MANUAL && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 1, help_pages);
     }
