@@ -119,7 +119,7 @@ string FindInStr(string, char, int);
 string inputChars = "";
 int temp = 0;
 
-int screenWidth = 60;
+const int screenWidth = 60;
 
 bool newsTickerRunning = false; // Dictates if the news ticker is even showing anything
 int newsTickerTime = 0; // Time between messages / scrolling speed
