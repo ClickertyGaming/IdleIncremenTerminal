@@ -180,7 +180,7 @@ int main() {
 
         buffer = "Idle IncremenTerminal v0.00a\n" + bigEmpty + "\r";
         if (debug == true) buffer += debugInfo;
-        else buffer += "Input \"menu help\" for all possible commands!";
+        else buffer += "Input \"help\" for all possible commands!";
 
         buffer += "\n";
         for (int i = 0; i < screenWidth; i++) {
@@ -214,17 +214,18 @@ int main() {
                 UpdateMenuReset();
                 UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1);
                 UpdateMenuLine("    - Leave empty to see a list of all available menus", 2);
-                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 8);
-                UpdateMenuLine("    - Tip: Leave <command> empty for a complete manual", 9);
-                UpdateMenuLine("    - Alias: manual [<command>]", 10);
+                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 7);
+                UpdateMenuLine("    - Tip: Leave <command> empty for a complete manual", 8);
+                UpdateMenuLine("    - Alias: manual [<command>]", 9);
+                UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
                 break;
             case MENU_MANUAL:
             	UpdateMenuReset();
-            	if (manual.count(command) == 0) {
-            	UpdateMenuLine("Command not recognized. Input \"help\" with no arguments", 1);
-            	UpdateMenuLine("for a complete list of every available command. Learn more", 2);
-            	UpdateMenuLine("about each command by inputting \"help [<command>]\" or", 3);
-            	UpdateMenuLine("\"manual [<command>]\"", 4);
+            	if (command == "" || command == " ") {
+            	    SetMenu(MENU_HELP);
+                } else if (manual.count(command) == 0) {
+                    UpdateMenuLine("Command not recognized. To list out every possible", 1);
+                    UpdateMenuLine("command, input \"help\" with no arguments.", 2);
 				} else {
 					UpdateMenuLine("> " + command, 1);
 					UpdateMenuLine(manual.at(command), 2);
@@ -312,9 +313,10 @@ void ParseInput(string input) {
         else if (splitInput[1] == "manual") SetMenu(MENU_MANUAL);
         else if (menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
     }
-    if (splitInput[0] == "help" || splitInput[0] == "manual") {
-    	command = splitInput[1] == splitInput[0] ? "": splitInput[1];
-    	SetMenu(MENU_MANUAL);
+    if ((splitInput[0] == "help" || splitInput[0] == "manual") && menu != MENU_SWITCH) {
+    	command = splitInput[1] == splitInput[0] ? " ": splitInput[1];
+        if (command == " ") SetMenu(MENU_HELP);
+    	else SetMenu(MENU_MANUAL);
 	}
 }
 
@@ -429,8 +431,8 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
         }
         else if (keyInputRecord.uChar.AsciiChar == 8 && inputChars.length() > 0) inputChars.pop_back();
         else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < screenWidth) inputChars.push_back(keyInputRecord.uChar.AsciiChar);
-        else if (menu == MENU_MANUAL && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 1, help_pages);
-        else if (menu == MENU_MANUAL && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 1, help_pages);
+        else if ((menu == MENU_MANUAL || menu == MENU_HELP) && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 1, help_pages);
+        else if ((menu == MENU_MANUAL || menu == MENU_HELP) && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 1, help_pages);
     }
 }
 
@@ -498,5 +500,6 @@ string FindInStr(string str, char delimiter, int index) {
 		}
 		i++;
 	}
+    if (temp == "") return " ";
 	return temp;
 }
