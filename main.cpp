@@ -110,7 +110,7 @@ VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 void UpdateScreen(HANDLE, int);
 void UpdateNewsTicker();
 void ParseInput(string);
-void UpdateMenuLine(string, int);
+void UpdateMenuLine(string, int, string);
 void UpdateMenuReset();
 void SetMenu(MenuState);
 int ClampInt(int, int, int);
@@ -128,14 +128,21 @@ int newsTickerTime = 0; // Time between messages / scrolling speed
 string newsTickerMsg = ""; // The message pulled from the array
 int newsTick = 0; // Letter index in newsTickerMsg
 int newsSpeed = 1; // Scroll speed of newsTickerMsg
-string newsTickerMsgArr[4] = {"Really hope your PC can run this at a stable speed.", "C++ for the win", "Your computer is running. Go catch it.",
-                            "Always remember to stack cleaner and faster."};
+string newsTickerMsgArr[6] = {"Really hope your PC can run this at a stable speed.", "C++ for the win", "Your computer is running. Go catch it.",
+                            "Always remember to stack cleaner and faster.", "You might say I'm just stealing from Antimatter Dimensions. The truth is:",
+                            "golf"};
 
 int help_page = 1;
 int help_pages = 1;
+int setting = 1;
+int settings = 5;
+int settingsOffset = 0;
 string command = "";
 map<string, string> manual = {
-	{"menu", "a"}
+	{"menu", "a░▒▓■"}
+};
+map<string, string> settingsMenu = {
+    {"", ""}
 };
 
 bool debug = false;
@@ -145,6 +152,7 @@ int main() {
     srand(time(0));
     newsTickerTime = (rand() % 60) + 20;
 
+    system("chcp 65001 1>nul");
     system("title Idle IncremenTerminal");
     system("cls");
 
@@ -197,51 +205,60 @@ int main() {
         for (int i = 0; i < screenWidth; i++) {
             buffer += "-";
         }
-        buffer += "\n";
+        if (settingsOffset > 0)
+            buffer += "\n    ^" + bigEmpty;
+        else
+            buffer += "\n" + bigEmpty;
 
         UpdateMenuReset();
         switch (menu) {
             case MENU_MAIN:
-                UpdateMenuLine("this is where the actual data goes", 10);
+                UpdateMenuLine("this is where the actual data goes", 10, "");
                 break;
             case MENU_SETTINGS:
-                UpdateMenuLine("settings menu", 10);
+                for (int i = 1; i <= min(settings, 9); i++) {
+                    if (i == setting) UpdateMenuLine("Setting " + to_string(i + settingsOffset), i, "  > ");
+                    else UpdateMenuLine("Setting " + to_string(i + settingsOffset), i, "    ");
+                }
+                if (settings > 9 && settingsOffset < settings - 9) UpdateMenuLine("v", 10, "    ");
                 break;
             case MENU_CREDITS:
-                UpdateMenuLine("Clickerty               Everything", 1);
-                UpdateMenuLine("credits menu", 10);
+                UpdateMenuLine("Clickerty               Everything", 1, "");
+                UpdateMenuLine("credits menu", 9, "");
+                UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10, "");
                 break;
             case MENU_HELP:
-                UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1);
-                UpdateMenuLine("    - Leave empty to see a list of all available menus", 2);
-                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 7);
-                UpdateMenuLine("    - Tip: Leave <command> empty for a complete manual", 8);
-                UpdateMenuLine("    - Alias: manual [<command>]", 9);
-                UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
+                UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1, "");
+                UpdateMenuLine("    - Leave empty to see a list of all available menus", 2, "");
+                UpdateMenuLine("help [<command>]      Extra info about the inputted command", 7, "");
+                UpdateMenuLine("    - Tip: Leave <command> empty for a complete manual", 8, "");
+                UpdateMenuLine("    - Alias: manual [<command>]", 9, "");
+                UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10, "");
                 break;
             case MENU_MANUAL:
             	if (command == "" || command == " ") {
             	    SetMenu(MENU_HELP);
                 } else if (manual.count(command) == 0) {
-                    UpdateMenuLine("Command not recognized. To list out every possible", 1);
-                    UpdateMenuLine("command, input \"help\" with no arguments.", 2);
+                    UpdateMenuLine("Command not recognized. To list out every possible", 1, "");
+                    UpdateMenuLine("command, input \"help\" with no arguments.", 2, "");
 				} else {
-					UpdateMenuLine("> " + command, 1);
-					UpdateMenuLine(manual.at(command), 2);
-					UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
+					UpdateMenuLine("> " + command, 1, "");
+					UpdateMenuLine(manual.at(command), 2, "");
+					UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10, "");
 				}
             	break;
             case MENU_SWITCH:
-                UpdateMenuLine("> main          Main menu", 1);
-                UpdateMenuLine("> settings      Settings menu", 2);
-                UpdateMenuLine("> credits       Credits menu", 3);
-                UpdateMenuLine("> help          Help menu", 4);
-                UpdateMenuLine("> manual        Manual", 5);
-                UpdateMenuLine("> cancel        Go back to the previous menu", 9);
-                UpdateMenuLine("Enter the name of a menu to switch to it", 10);
+                UpdateMenuLine("> main          Main menu", 1, "");
+                UpdateMenuLine("> settings      Settings menu", 2, "");
+                UpdateMenuLine("> credits       Credits menu", 3, "");
+                UpdateMenuLine("> help          Help menu", 4, "");
+                UpdateMenuLine("> manual        Manual", 5, "");
+                UpdateMenuLine("> cancel        Go back to the previous menu", 9, "");
+                UpdateMenuLine("Enter the name of a menu to switch to it", 10, "");
                 break;
             default:
-                UpdateMenuLine("this is the default fallback screen", 10);
+                UpdateMenuLine("You're not supposed to be here.", 1, "");
+                UpdateMenuLine("this is the default fallback screen", 10, "");
                 break;
         }
 
@@ -251,7 +268,7 @@ int main() {
 
         buffer += "\n>";
 
-        bool consoleInput = ReadConsoleInputExW(inputHandle, inputRecordsInBuffer, screenWidth, &numOfCharactersRead, (CONSOLE_READ_NOWAIT));
+        bool consoleInput = ReadConsoleInputExA(inputHandle, inputRecordsInBuffer, screenWidth, &numOfCharactersRead, (CONSOLE_READ_NOWAIT));
 
         for (i = 0; i < numOfCharactersRead; i++) {
             switch (inputRecordsInBuffer[i].EventType) {
@@ -293,7 +310,6 @@ void ParseInput(string input) {
     splitInput[0] = FindInStr(lowerInput, ' ', 0);
     splitInput[1] = FindInStr(lowerInput, ' ', 1);
     splitInput[2] = FindInStr(lowerInput, ' ', 2);
-    debugInfo = splitInput[0] + " " + splitInput[1] + " " + splitInput[2];
     if (menu == MENU_SWITCH) {
         if (splitInput[0] == "help") SetMenu(MENU_HELP);
         else if (splitInput[0] == "main") SetMenu(MENU_MAIN);
@@ -322,8 +338,8 @@ void SetMenu(MenuState newMenu) {
     menu = newMenu;
 }
 
-void UpdateMenuLine(string text, int lineNum) {
-	menuBuffer[ClampInt(lineNum-1, 0, 9)] = "\n" + text + bigEmpty;
+void UpdateMenuLine(string text, int lineNum, string prefix) {
+	menuBuffer[ClampInt(lineNum-1, 0, 9)] = "\n" + prefix + text + bigEmpty;
 }
 
 void UpdateMenuReset() {
@@ -446,6 +462,27 @@ VOID KeyEventProc(KEY_EVENT_RECORD keyInputRecord) {
         else if (keyInputRecord.uChar.AsciiChar >= 32 && keyInputRecord.uChar.AsciiChar < 127 && inputChars.length() < screenWidth) inputChars.push_back(keyInputRecord.uChar.AsciiChar);
         else if ((menu == MENU_MANUAL || menu == MENU_HELP) && keyInputRecord.wVirtualKeyCode == VK_RIGHT) help_page = WrapInt(++help_page, 1, help_pages);
         else if ((menu == MENU_MANUAL || menu == MENU_HELP) && keyInputRecord.wVirtualKeyCode == VK_LEFT) help_page = WrapInt(--help_page, 1, help_pages);
+        else if (menu == MENU_SETTINGS && keyInputRecord.wVirtualKeyCode == VK_UP) {
+            if (setting == 1 && settingsOffset == 0) {
+                setting = min(settings, 9);
+                settingsOffset = settings - min(settings, 9);
+            } else if (setting == 1 && setting + settingsOffset > 1) 
+                settingsOffset--;
+            else 
+                setting--;
+
+            debugInfo = to_string(setting) + " + " + to_string(settingsOffset) + " / " + to_string(settings);
+        } else if (menu == MENU_SETTINGS && keyInputRecord.wVirtualKeyCode == VK_DOWN) {
+            if (setting == min(settings, 9) && settingsOffset == settings - min(settings, 9)) {
+                setting = 1;
+                settingsOffset = 0;
+            } else if (setting == min(settings, 9) && setting + settingsOffset < settings) 
+                settingsOffset++;
+            else 
+                setting++;
+
+            debugInfo = to_string(setting) + " + " + to_string(settingsOffset) + " / " + to_string(settings);
+        }
     }
 }
 
