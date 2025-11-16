@@ -72,6 +72,7 @@ extra padding so no code is immediately visible
 #include <cctype>
 #include <array>
 #include <map>
+#include <algorithm>
 using namespace std;
 
 typedef bool (WINAPI *ReadConsoleInputEx)(HANDLE, PINPUT_RECORD, DWORD, LPDWORD, USHORT);
@@ -115,6 +116,7 @@ void SetMenu(MenuState);
 int ClampInt(int, int, int);
 int WrapInt(int, int, int);
 string FindInStr(string, char, int);
+string ReturnANSIColorCode(int);
 
 string inputChars = "";
 int temp = 0;
@@ -126,7 +128,8 @@ int newsTickerTime = 0; // Time between messages / scrolling speed
 string newsTickerMsg = ""; // The message pulled from the array
 int newsTick = 0; // Letter index in newsTickerMsg
 int newsSpeed = 1; // Scroll speed of newsTickerMsg
-string newsTickerMsgArr[3] = {"this is a test message", "oidfjsoojdifoisdjfiosjodf", "no way this actually works dude"};
+string newsTickerMsgArr[4] = {"Really hope your PC can run this at a stable speed.", "C++ for the win", "Your computer is running. Go catch it.",
+                            "Always remember to stack cleaner and faster."};
 
 int help_page = 1;
 int help_pages = 1;
@@ -196,22 +199,19 @@ int main() {
         }
         buffer += "\n";
 
+        UpdateMenuReset();
         switch (menu) {
             case MENU_MAIN:
-                UpdateMenuReset();
                 UpdateMenuLine("this is where the actual data goes", 10);
                 break;
             case MENU_SETTINGS:
-                UpdateMenuReset();
                 UpdateMenuLine("settings menu", 10);
                 break;
             case MENU_CREDITS:
-                UpdateMenuReset();
                 UpdateMenuLine("Clickerty               Everything", 1);
                 UpdateMenuLine("credits menu", 10);
                 break;
             case MENU_HELP:
-                UpdateMenuReset();
                 UpdateMenuLine("menu [<args>]         Shows the menu specified in [<args>]", 1);
                 UpdateMenuLine("    - Leave empty to see a list of all available menus", 2);
                 UpdateMenuLine("help [<command>]      Extra info about the inputted command", 7);
@@ -220,7 +220,6 @@ int main() {
                 UpdateMenuLine("<- (" + to_string(help_page) + "/" + to_string(help_pages) + ") ->", 10);
                 break;
             case MENU_MANUAL:
-            	UpdateMenuReset();
             	if (command == "" || command == " ") {
             	    SetMenu(MENU_HELP);
                 } else if (manual.count(command) == 0) {
@@ -233,7 +232,6 @@ int main() {
 				}
             	break;
             case MENU_SWITCH:
-                UpdateMenuReset();
                 UpdateMenuLine("> main          Main menu", 1);
                 UpdateMenuLine("> settings      Settings menu", 2);
                 UpdateMenuLine("> credits       Credits menu", 3);
@@ -243,7 +241,6 @@ int main() {
                 UpdateMenuLine("Enter the name of a menu to switch to it", 10);
                 break;
             default:
-                UpdateMenuReset();
                 UpdateMenuLine("this is the default fallback screen", 10);
                 break;
         }
@@ -274,7 +271,7 @@ int main() {
             }
         }
 
-        UpdateScreen(outputHandle, 100);
+        UpdateScreen(outputHandle, 70);
     }
 
     SetConsoleMode(inputHandle, modeFlagsOld);
@@ -314,7 +311,7 @@ void ParseInput(string input) {
         else if (menu != MENU_SWITCH) SetMenu(MENU_SWITCH);
     }
     if ((splitInput[0] == "help" || splitInput[0] == "manual") && menu != MENU_SWITCH) {
-    	command = splitInput[1] == splitInput[0] ? " ": splitInput[1];
+    	command = splitInput[1];
         if (command == " ") SetMenu(MENU_HELP);
     	else SetMenu(MENU_MANUAL);
 	}
@@ -393,11 +390,18 @@ void UpdateNewsTicker() {
             newsTickerTime = newsSpeed;
             for (int i = -screenWidth; i < 0; i++) {
                 if (newsTick + i >= 0 && newsTick + i < newsTickerMsg.length()) {
+                    /* if (newsTickerMsg[newsTick + i] == (char)"Ł") {
+                        if (newsTick + i + 1 < newsTickerMsg.length()) {
+                            if (newsTickerMsg[newsTick + i + 1]) ;
+                        } else buffer += " ";
+                    }
+                    else buffer += newsTickerMsg[newsTick + i]; */
                     buffer += newsTickerMsg[newsTick + i];
                 } else {
                     buffer += " ";
                 }
             }
+            /* buffer += "^[[0m"; */
             if (++newsTick > newsTickerMsg.length()+screenWidth) {
                 buffer += "\r ";
                 newsTick = 0;
@@ -407,6 +411,15 @@ void UpdateNewsTicker() {
             }
         }
     }
+}
+
+string ReturnANSIColorCode(int input) {
+    string temp = "^[[";
+    switch (input) {
+        case 0:
+            temp += "91";
+    }
+    return temp+"m";
 }
 
 // ------------------------------------
@@ -495,11 +508,11 @@ string FindInStr(string str, char delimiter, int index) {
 			temp = tempStr.substr(0, tempStr.find_first_of(delimiter));
 			tempStr.erase(0, tempStr.find_first_of(delimiter) + 1);
 		} else {
-			i = index;
 			temp = tempStr;
+            break;
 		}
 		i++;
 	}
-    if (temp == "") return " ";
+    if (temp == "" || i < index) return " ";
 	return temp;
 }
