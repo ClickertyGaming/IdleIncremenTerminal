@@ -139,10 +139,7 @@ int settings = 5;
 int settingsOffset = 0;
 string command = "";
 map<string, string> manual = {
-	{"menu", "a░▒▓■"}
-};
-map<string, string> settingsMenu = {
-    {"", ""}
+	{"menu", "a░▒▓■█"}
 };
 
 bool debug = false;
